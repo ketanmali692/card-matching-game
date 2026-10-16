@@ -1,0 +1,117 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="theme-color" content="#0a1929">
+    <title>Sign Up - Card Matching Game</title>
+    <link rel="stylesheet" href="login.css">
+</head>
+<body>
+
+<div id="authScreen">
+    <div class="auth-card">
+        <div class="auth-header">
+            <h1 class="auth-title">Create Account</h1>
+            <p class="auth-subtitle">Create your account to start your preparation</p>
+            <div class="game-name-block">
+                <h2 class="game-name">CARD MATCHING GAME</h2>
+                <p class="game-tagline">★ 3D MEMORY CHALLENGE ★</p>
+            </div>
+        </div>
+
+        <form class="auth-form" id="signupForm" onsubmit="return false;">
+            <div class="input-group">
+                <label>Full Name</label>
+                <div class="input-wrapper">
+                    <input type="text" id="nameInput" placeholder="Enter your full name">
+                </div>
+            </div>
+
+            <div class="input-group">
+                <label>Email Address</label>
+                <div class="input-wrapper">
+                    <input type="email" id="emailInput" placeholder="Enter your email address">
+                </div>
+            </div>
+
+            <div class="input-group">
+                <label>Password</label>
+                <div class="input-wrapper">
+                    <input type="password" id="passwordInput" placeholder="Create password">
+                    <button type="button" class="eye-btn" id="togglePassword">
+                        <svg viewBox="0 0 24 24" class="eye-icon" id="eyeIcon">
+                            <path d="M12 5c-7 0-11 7-11 7s4 7 11 7 11-7 11-7-4-7-11-7zm0 12a5 5 0 110-10 5 5 0 010 10zm0-8a3 3 0 100 6 3 3 0 000-6z"/>
+                        </svg>
+                    </button>
+                </div>
+            </div>
+
+            <div class="input-group">
+                <label>Confirm Password</label>
+                <div class="input-wrapper">
+                    <input type="password" id="confirmPasswordInput" placeholder="Confirm password">
+                    <button type="button" class="eye-btn" id="toggleConfirmPassword">
+                        <svg viewBox="0 0 24 24" class="eye-icon" id="eyeIcon2">
+                            <path d="M12 5c-7 0-11 7-11 7s4 7 11 7 11-7 11-7-4-7-11-7zm0 12a5 5 0 110-10 5 5 0 010 10zm0-8a3 3 0 100 6 3 3 0 000-6z"/>
+                        </svg>
+                    </button>
+                </div>
+            </div>
+
+            <div class="error-msg hidden" id="errorMsg"></div>
+            <div class="success-msg hidden" id="successMsg"></div>
+
+            <button class="btn-login" id="btnSignup" type="button">
+                <span class="btn-text">CREATE ACCOUNT</span>
+            </button>
+
+            <p class="signup-text">
+                Already have an account?
+                <a href="login.html" class="signup-link">Login</a>
+            </p>
+        </form>
+    </div>
+</div>
+
+<!-- OTP MODAL -->
+<div class="modal-overlay" id="otpModal">
+    <div class="modal-box otp-modal-box">
+        <div class="otp-icon">📧</div>
+        <h2 class="otp-title">Verify Email</h2>
+        <p class="otp-sub" id="otpSubtitle">We've sent a 6-digit OTP to your email</p>
+
+        <div class="otp-info">
+            <span class="otp-info-label">📬 Check your inbox</span>
+            <span class="otp-info-hint">OTP valid for 5 minutes</span>
+        </div>
+
+        <div class="otp-inputs" id="otpInputs">
+            <input type="text" maxlength="1" inputmode="numeric" class="otp-box">
+            <input type="text" maxlength="1" inputmode="numeric" class="otp-box">
+            <input type="text" maxlength="1" inputmode="numeric" class="otp-box">
+            <input type="text" maxlength="1" inputmode="numeric" class="otp-box">
+            <input type="text" maxlength="1" inputmode="numeric" class="otp-box">
+            <input type="text" maxlength="1" inputmode="numeric" class="otp-box">
+        </div>
+
+        <div class="error-msg hidden" id="otpError"></div>
+
+        <button class="btn-login" id="btnVerifyOtp" type="button">
+            <span class="btn-text">VERIFY OTP</span>
+        </button>
+
+        <button class="otp-resend" id="btnResendOtp" type="button">
+            Didn't receive? Resend OTP
+        </button>
+
+        <button class="otp-close" id="btnCloseOtp" type="button">
+            ✖ Cancel
+        </button>
+    </div>
+</div>
+
+<script src="api.js"></script>
+<script src="signup.js"></script>
+</body>
+</html>

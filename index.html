@@ -1,0 +1,240 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="theme-color" content="#0a0f23">
+    <title>Card Matching Game</title>
+
+    <!-- PWA -->
+    <link rel="manifest" href="manifest.json">
+    <link rel="apple-touch-icon" href="icons/icon-192x192.png">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+    <meta name="apple-mobile-web-app-title" content="CardMatch">
+    <meta name="mobile-web-app-capable" content="yes">
+    <meta name="application-name" content="CardMatch">
+
+    <link rel="stylesheet" href="style.css">
+</head>
+<body>
+
+<div id="splash">
+    <div class="splash-title">CARD MATCHING GAME</div>
+    <div class="splash-sub">★ 3D MEMORY CHALLENGE ★</div>
+    <div class="progress-bar">
+        <div class="loading-text">LOADING...</div>
+        <div class="progress-fill" id="progressFill"></div>
+    </div>
+    <div class="progress-text" id="progressText">0 %</div>
+</div>
+
+<div id="home" class="screen">
+    <div class="home-top-bar">
+        <button class="top-icon-btn" id="btnSettings">⚙️</button>
+        <button class="top-icon-btn" id="btnProfile">👤</button>
+    </div>
+    <div class="home-title">CARD MATCHING</div>
+    <div class="home-sub">★ 3D MEMORY CHALLENGE ★</div>
+    <div class="section-heading">LEVELS</div>
+    <div class="level-path-container">
+        <canvas id="levelPath"></canvas>
+    </div>
+    <div class="stats-row">
+        <div class="stat-card gold">
+            <span class="stat-icon">🏆</span>
+            <div class="stat-label">Best Level</div>
+            <div class="stat-value" id="statBestLevel">1</div>
+        </div>
+        <div class="stat-card">
+            <span class="stat-icon">⭐</span>
+            <div class="stat-label">Best Score</div>
+            <div class="stat-value" id="statBestScore">0</div>
+        </div>
+        <div class="stat-card cyan">
+            <span class="stat-icon">🎯</span>
+            <div class="stat-label">Matches</div>
+            <div class="stat-value" id="statMatches">0</div>
+        </div>
+    </div>
+    <div class="button-grid">
+        <button class="btn btn-play" id="btnPlay">▶ Play</button>
+        <button class="btn btn-levels" id="btnLevels">📋 Levels</button>
+        <button class="btn btn-sound" id="btnSound">🔊 Sound</button>
+        <button class="btn btn-rules" id="btnRules">📖 Rules</button>
+        <button class="btn btn-reset" id="btnReset">🔄 Reset</button>
+        <button class="btn btn-exit" id="btnExit">✖ Exit</button>
+    </div>
+</div>
+
+<div id="game-screen" class="screen">
+    <div class="game-top">
+        <button class="mini-btn orange" id="btnGameHome">⬅ HOME</button>
+        <div class="game-title">CARD MATCHING</div>
+        <button class="mini-btn" id="btnGameLevels">☰ LEVELS</button>
+    </div>
+    <div class="hud">
+        <div class="hud-item" id="hud-level">LVL: 1</div>
+        <div class="hud-item" id="hud-flips">FLIPS: 0/12</div>
+        <div class="hud-item" id="hud-score">SCORE: 0</div>
+        <div class="hud-item" id="hud-hints">HINTS: 3/3</div>
+        <div class="hud-item" id="hud-status">READY</div>
+    </div>
+    <div class="card-grid" id="cardGrid"></div>
+    <div class="game-bottom">
+        <button class="mini-btn" id="btnHint">💡 HINT</button>
+        <button class="mini-btn" id="btnPause">⏸ PAUSE</button>
+        <button class="mini-btn" id="btnRestart">🔄 RESTART</button>
+        <button class="mini-btn" id="btnGameRules">📖 RULES</button>
+    </div>
+</div>
+
+<div class="dialog-overlay" id="dialogOverlay">
+    <div class="dialog" id="dialog">
+        <div class="dialog-title" id="dialogTitle"></div>
+        <div class="dialog-sub" id="dialogSub"></div>
+        <div class="dialog-score" id="dialogScore"></div>
+        <div class="dialog-next" id="dialogNext"></div>
+        <div class="dialog-buttons" id="dialogButtons"></div>
+    </div>
+</div>
+
+<div class="modal-overlay" id="profileModal">
+    <div class="modal-box profile-box">
+        <button class="modal-close" id="closeProfile">✖</button>
+        <div class="profile-avatar">👤</div>
+        <h2 class="profile-name" id="profileName">Player</h2>
+        <p class="profile-type-badge" id="profileTypeBadge">📧 Email Account</p>
+        <div class="profile-info-list">
+            <div class="profile-info-item">
+                <div class="profile-info-icon">👤</div>
+                <div class="profile-info-content">
+                    <div class="profile-info-label">Name</div>
+                    <div class="profile-info-value" id="profileInfoName">-</div>
+                </div>
+            </div>
+            <div class="profile-info-item">
+                <div class="profile-info-icon">📧</div>
+                <div class="profile-info-content">
+                    <div class="profile-info-label">Email / Mobile</div>
+                    <div class="profile-info-value" id="profileInfoIdentifier">-</div>
+                </div>
+            </div>
+            <div class="profile-info-item">
+                <div class="profile-info-icon">🔒</div>
+                <div class="profile-info-content">
+                    <div class="profile-info-label">Account Type</div>
+                    <div class="profile-info-value" id="profileInfoAccountType">-</div>
+                </div>
+            </div>
+            <div class="profile-info-item">
+                <div class="profile-info-icon">🕐</div>
+                <div class="profile-info-content">
+                    <div class="profile-info-label">Login Time</div>
+                    <div class="profile-info-value" id="profileInfoLoginTime">-</div>
+                </div>
+            </div>
+            <div class="profile-info-item">
+                <div class="profile-info-icon">✅</div>
+                <div class="profile-info-content">
+                    <div class="profile-info-label">Status</div>
+                    <div class="profile-info-value" id="profileInfoStatus">-</div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="modal-overlay" id="settingsModal">
+    <div class="modal-box settings-box">
+        <button class="modal-close" id="closeSettings">✖</button>
+        <h2 class="modal-title">⚙️ Settings</h2>
+        <div class="settings-list">
+            <button class="settings-item" id="btnHelp">
+                <span class="settings-item-icon">❓</span>
+                <span class="settings-item-text">
+                    <strong>Help</strong>
+                    <small>How to play the game</small>
+                </span>
+                <span class="settings-item-arrow">›</span>
+            </button>
+            <button class="settings-item" id="btnTerms">
+                <span class="settings-item-icon">📜</span>
+                <span class="settings-item-text">
+                    <strong>Terms & Conditions</strong>
+                    <small>Game rules & privacy</small>
+                </span>
+                <span class="settings-item-arrow">›</span>
+            </button>
+            <button class="settings-item danger" id="btnLogout">
+                <span class="settings-item-icon">🚪</span>
+                <span class="settings-item-text">
+                    <strong>Logout</strong>
+                    <small>Sign out from this device</small>
+                </span>
+                <span class="settings-item-arrow">›</span>
+            </button>
+        </div>
+    </div>
+</div>
+
+<div class="modal-overlay" id="helpModal">
+    <div class="modal-box info-box">
+        <button class="modal-close" id="closeHelp">✖</button>
+        <h2 class="modal-title">❓ Help</h2>
+        <div class="info-content">
+            <p><strong>🎮 How to Play:</strong></p>
+            <ul>
+                <li>Cards pe click karke flip karo</li>
+                <li>Same symbols ke 2 cards match karo</li>
+                <li>Sahi match → +100 points</li>
+                <li>Galat match → -25 points</li>
+                <li>Level complete karo aur aage badho</li>
+            </ul>
+            <p><strong>💡 Tips:</strong></p>
+            <ul>
+                <li>HINT button use karo (3 per level)</li>
+                <li>Yaad rakho cards ki positions</li>
+                <li>Level ke flips limit me raho</li>
+            </ul>
+        </div>
+    </div>
+</div>
+
+<div class="modal-overlay" id="termsModal">
+    <div class="modal-box info-box">
+        <button class="modal-close" id="closeTerms">✖</button>
+        <h2 class="modal-title">📜 Terms & Conditions</h2>
+        <div class="info-content">
+            <p><strong>🎯 Purpose:</strong></p>
+            <p>This game is designed only to improve your <strong>memory and mind power</strong>.</p>
+            <ul>
+                <li>🧠 Memory improvement</li>
+                <li>🎯 Focus and concentration</li>
+                <li>⚡ Quick thinking</li>
+                <li>👁️ Visual recognition</li>
+            </ul>
+            <p><strong>🔒 Privacy:</strong></p>
+            <ul>
+                <li>Your data is stored securely</li>
+                <li>Password is encrypted (bcrypt)</li>
+                <li>We don't share your data with anyone</li>
+            </ul>
+            <p><strong>📋 Usage:</strong></p>
+            <ul>
+                <li>Free to play forever</li>
+                <li>No ads, no hidden charges</li>
+                <li>Play responsibly</li>
+            </ul>
+            <p style="margin-top: 20px; text-align: center; color: #60a5fa;">
+                <em>Made with ❤️ for memory training</em>
+            </p>
+        </div>
+    </div>
+</div>
+
+<script src="api.js"></script>
+<script src="pwa.js"></script>
+<script src="game.js"></script>
+</body>
+</html>
