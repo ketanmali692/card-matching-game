@@ -86,7 +86,7 @@ async function handleSignup() {
 
     var btn = document.getElementById('btnSignup');
     btn.disabled = true;
-    btn.querySelector('.btn-text').textContent = 'SENDING OTP...';
+    btn.querySelector('.btn-text').textContent =';
 
     try {
         await window.AuthAPI.sendOTP(name, email, password);
