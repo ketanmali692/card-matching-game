@@ -2,13 +2,14 @@
 //  SERVICE WORKER - Card Matching Game PWA
 // ============================================================
 
-var CACHE_NAME = 'card-matching-v2';
+var CACHE_NAME = 'card-matching-v3'; // ✅ Version v3 kar diya (purana cache clear hoga)
 
 var STATIC_ASSETS = [
     './',
     './index.html',
     './login.html',
     './signup.html',
+    './splash.html',
     './style.css',
     './login.css',
     './api.js',
