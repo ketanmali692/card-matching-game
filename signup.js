@@ -72,7 +72,6 @@ async function handleSignup() {
     if (name.length < 2) { showError('Name must be at least 2 characters'); return; }
     if (!email) { showError('Please enter your email address'); return; }
 
-    // Only email validation
     var isEmail = /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email);
     if (!isEmail) {
         showError('Please enter a valid email address');
@@ -83,7 +82,6 @@ async function handleSignup() {
     if (password.length < 6) { showError('Password must be at least 6 characters'); return; }
     if (password !== confirmPassword) { showError('Passwords do not match'); return; }
 
-    // Save pending data
     pendingUserData = {
         name: name,
         email: email.toLowerCase(),
@@ -92,17 +90,13 @@ async function handleSignup() {
 
     var btn = document.getElementById('btnSignup');
     btn.disabled = true;
-    btn.querySelector('.btn-text').textContent = 'SENDING OTP...';
+    btn.querySelector('.btn-text').textContent = 'SENDING... (Wait 1-2 min)';
 
     try {
-        // Call backend to send OTP to email
         await window.AuthAPI.sendOTP(name, email, password);
-
         showOTPModal(email);
-
         btn.disabled = false;
         btn.querySelector('.btn-text').textContent = 'CREATE ACCOUNT';
-
     } catch (err) {
         showError(err.message);
         btn.disabled = false;
@@ -186,7 +180,6 @@ async function verifyOTP() {
     btn.querySelector('.btn-text').textContent = 'VERIFYING...';
 
     try {
-        // Use email as identifier for verification
         await window.AuthAPI.verifyOTP(entered, pendingUserData.email);
 
         closeOTPModal();
@@ -209,6 +202,9 @@ async function resendOTP() {
     if (!pendingUserData) return;
 
     try {
+        var btn = document.getElementById('btnResendOtp');
+        btn.textContent = 'Sending... (Wait 1-2 min)';
+        
         await window.AuthAPI.sendOTP(
             pendingUserData.name,
             pendingUserData.email,
@@ -222,14 +218,13 @@ async function resendOTP() {
         var first = document.querySelector('.otp-box');
         if (first) first.focus();
 
-        var btn = document.getElementById('btnResendOtp');
-        var original = btn.textContent;
+        var original = 'Didn\'t receive? Resend OTP';
         btn.textContent = '✓ New OTP sent to your email!';
         btn.style.color = '#4ade80';
         setTimeout(function() {
             btn.textContent = original;
             btn.style.color = '';
-        }, 2000);
+        }, 3000);
 
     } catch (err) {
         alert('Failed to resend OTP: ' + err.message);
@@ -253,7 +248,7 @@ function showError(msg) {
     el.classList.remove('hidden');
     el.style.animation = 'none';
     setTimeout(function() { el.style.animation = 'shake 0.4s ease'; }, 10);
-    setTimeout(function() { el.classList.add('hidden'); }, 4000);
+    setTimeout(function() { el.classList.add('hidden'); }, 6000);
 }
 
 function showSuccess(msg) {

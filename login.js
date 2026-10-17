@@ -6,13 +6,7 @@ var forgotEmailValue = '';
 var forgotOtpValue = '';
 
 window.addEventListener('DOMContentLoaded', function() {
-    var token = localStorage.getItem('card_matching_token');
-    var user = localStorage.getItem('card_matching_user_v1');
-    if (token && user) {
-        window.location.href = 'index.html';
-        return;
-    }
-
+    // ❌ AUTO-LOGIN HATA DIYA HAI
     setupPasswordToggles();
     setupButtons();
     setupInputs();
@@ -89,7 +83,7 @@ async function handleLogin() {
 
     var btn = document.getElementById('btnLogin');
     btn.disabled = true;
-    btn.querySelector('.btn-text').textContent = 'LOGGING IN...';
+    btn.querySelector('.btn-text').textContent = 'LOGGING IN... (Wait)';
 
     try {
         await window.AuthAPI.login(email, password);
@@ -111,13 +105,11 @@ async function handleLogin() {
 //  FORGOT PASSWORD FLOW
 // ============================================================
 function openForgotModal() {
-    // Reset all steps
     document.getElementById('forgotStep1').style.display = 'block';
     document.getElementById('forgotStep2').style.display = 'none';
     document.getElementById('forgotStep3').style.display = 'none';
     document.getElementById('forgotStep4').style.display = 'none';
 
-    // Clear inputs
     document.getElementById('forgotEmail').value = '';
     document.getElementById('newPassword').value = '';
     document.getElementById('confirmNewPassword').value = '';
@@ -126,12 +118,10 @@ function openForgotModal() {
         b.classList.remove('filled');
     });
 
-    // Hide errors
     ['forgotError1', 'forgotError2', 'forgotError3'].forEach(function(id) {
         document.getElementById(id).classList.add('hidden');
     });
 
-    // Pre-fill email if user typed it on login form
     var loginEmail = document.getElementById('emailInput').value.trim();
     if (loginEmail) document.getElementById('forgotEmail').value = loginEmail;
 
@@ -152,7 +142,6 @@ function setupForgotPassword() {
         closeForgotModal();
     };
 
-    // OTP input behavior
     var otpBoxes = document.querySelectorAll('#forgotOtpInputs .otp-box');
     otpBoxes.forEach(function(box, idx) {
         box.addEventListener('input', function(e) {
@@ -188,13 +177,11 @@ function setupForgotPassword() {
         });
     });
 
-    // Enter key on email field
     document.getElementById('forgotEmail').addEventListener('keypress', function(e) {
         if (e.key === 'Enter') handleSendForgotOtp();
     });
 }
 
-// ---------- STEP 1: SEND OTP ----------
 async function handleSendForgotOtp() {
     var errEl = document.getElementById('forgotError1');
     errEl.classList.add('hidden');
@@ -218,7 +205,7 @@ async function handleSendForgotOtp() {
 
     var btn = document.getElementById('btnSendForgotOtp');
     btn.disabled = true;
-    btn.querySelector('.btn-text').textContent = 'SENDING...';
+    btn.querySelector('.btn-text').textContent = 'SENDING... (Wait)';
 
     try {
         await window.AuthAPI.forgotPassword(forgotEmailValue);
@@ -243,7 +230,6 @@ async function handleSendForgotOtp() {
     btn.querySelector('.btn-text').textContent = 'SEND OTP';
 }
 
-// ---------- STEP 2: VERIFY OTP ----------
 async function handleVerifyForgotOtp() {
     var errEl = document.getElementById('forgotError2');
     errEl.classList.add('hidden');
@@ -258,7 +244,6 @@ async function handleVerifyForgotOtp() {
         return;
     }
 
-    // Just store OTP — will verify during reset
     forgotOtpValue = entered;
 
     document.getElementById('forgotStep2').style.display = 'none';
@@ -269,11 +254,10 @@ async function handleVerifyForgotOtp() {
     }, 200);
 }
 
-// ---------- RESEND OTP ----------
 async function handleResendForgotOtp() {
     var btn = document.getElementById('btnResendForgotOtp');
     var original = btn.textContent;
-    btn.textContent = 'Sending...';
+    btn.textContent = 'Sending... (Wait)';
     btn.disabled = true;
 
     try {
@@ -300,7 +284,6 @@ async function handleResendForgotOtp() {
     }, 2500);
 }
 
-// ---------- STEP 3: RESET PASSWORD ----------
 async function handleResetPassword() {
     var errEl = document.getElementById('forgotError3');
     errEl.classList.add('hidden');
@@ -342,16 +325,13 @@ async function handleResetPassword() {
     }
 }
 
-// ============================================================
-//  MESSAGES
-// ============================================================
 function showError(msg) {
     var el = document.getElementById('errorMsg');
     el.textContent = '⚠ ' + msg;
     el.classList.remove('hidden');
     el.style.animation = 'none';
     setTimeout(function() { el.style.animation = 'shake 0.4s ease'; }, 10);
-    setTimeout(function() { el.classList.add('hidden'); }, 4000);
+    setTimeout(function() { el.classList.add('hidden'); }, 6000);
 }
 
 function showSuccess(msg) {

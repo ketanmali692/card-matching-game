@@ -6,9 +6,9 @@
     "scope": "./",
     "display": "standalone",
     "display_override": ["standalone", "fullscreen", "minimal-ui"],
+    "orientation": "portrait-primary",
     "background_color": "#0a0f23",
     "theme_color": "#0a0f23",
-    "orientation": "any",
     "lang": "en",
     "categories": ["games", "entertainment"],
     "icons": [
