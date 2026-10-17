@@ -179,8 +179,7 @@ async function verifyOTP() {
         showSuccess('Account created! Redirecting...');
 
         setTimeout(function() {
-            // Account created, go to splash
-            window.location.href = 'splash.html';
+            window.location.href = 'splash.html'; // Splash pe bhejo
         }, 1000);
 
     } catch (err) {
@@ -219,4 +218,36 @@ async function resendOTP() {
             btn.style.color = '';
         }, 3000);
 
-    } catch (err)
+    } catch (err) {
+        alert('Failed to resend OTP: ' + err.message);
+    }
+}
+
+function closeOTPModal() {
+    document.getElementById('otpModal').classList.remove('active');
+    document.querySelectorAll('.otp-box').forEach(function(box) {
+        box.value = '';
+        box.classList.remove('filled');
+    });
+    document.getElementById('otpError').classList.add('hidden');
+}
+
+function showError(msg) {
+    var el = document.getElementById('errorMsg');
+    el.textContent = '⚠ ' + msg;
+    el.classList.remove('hidden');
+    el.style.animation = 'none';
+    setTimeout(function() { el.style.animation = 'shake 0.4s ease'; }, 10);
+    setTimeout(function() { el.classList.add('hidden'); }, 4000);
+}
+
+function showSuccess(msg) {
+    var el = document.getElementById('successMsg');
+    el.textContent = '✓ ' + msg;
+    el.classList.remove('hidden');
+}
+
+function hideMessages() {
+    document.getElementById('errorMsg').classList.add('hidden');
+    document.getElementById('successMsg').classList.add('hidden');
+}

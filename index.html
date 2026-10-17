@@ -63,7 +63,6 @@
 </head>
 <body>
 
-<!-- DOWNLOAD SCREEN -->
 <div id="downloadScreen">
     <div class="dl-icon">🎮</div>
     <h1 class="dl-title">Card Matching Game</h1>
@@ -88,7 +87,7 @@
         var installBtn = document.getElementById('dlInstallBtn');
         var skipBtn = document.getElementById('dlSkipBtn');
 
-        // Agar user already installed hai, to direct Login page pe bhej do
+        // Agar user pehle se install kar chuka hai, to direct login pe bhej do
         if (localStorage.getItem('card_matching_installed') === 'true') {
             window.location.href = 'login.html';
         }
