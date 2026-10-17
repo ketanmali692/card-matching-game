@@ -8,6 +8,7 @@
 
     <!-- PWA -->
     <link rel="manifest" href="manifest.json">
+    <link rel="icon" type="image/png" href="icons/icon-192x192.png">
     <link rel="apple-touch-icon" href="icons/icon-192x192.png">
     <meta name="apple-mobile-web-app-capable" content="yes">
     <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
@@ -17,59 +18,100 @@
 
     <link rel="stylesheet" href="style.css">
     <style>
-        /* Splash hata diya */
-        #splash { display: none !important; }
+        /* ---------- DOWNLOAD SCREEN STYLE ---------- */
+        #downloadScreen {
+            position: fixed; inset: 0; z-index: 99999;
+            background: radial-gradient(circle at 50% 40%, #2d1b4e 0%, #0a0514 60%, #050208 100%);
+            display: flex; flex-direction: column; align-items: center; justify-content: center;
+            padding: 30px; text-align: center; color: white;
+        }
+        .dl-icon {
+            width: 130px; height: 130px;
+            background: linear-gradient(135deg, #a855f7, #7e22ce);
+            border-radius: 32px; display: flex; align-items: center; justify-content: center;
+            font-size: 60px; margin-bottom: 25px;
+            box-shadow: 0 10px 30px rgba(168, 85, 247, 0.6);
+            animation: floatIcon 3s ease-in-out infinite;
+        }
+        @keyframes floatIcon { 0%, 100% { transform: translateY(0); } 50% { transform: translateY(-15px); } }
+        .dl-title { font-size: 28px; font-weight: 900; color: #f0f5ff; margin-bottom: 8px; letter-spacing: 1px; }
+        .dl-sub { font-size: 15px; color: #a855f7; margin-bottom: 25px; font-weight: 600; letter-spacing: 1px; }
+        .dl-features {
+            background: rgba(255,255,255,0.05); border: 1px solid rgba(168, 85, 247, 0.3);
+            border-radius: 15px; padding: 20px; width: 100%; max-width: 340px;
+            margin-bottom: 25px; text-align: left;
+        }
+        .dl-feature-item { display: flex; align-items: center; gap: 10px; margin-bottom: 12px; color: #d0dae8; font-size: 14px; }
+        .dl-feature-item:last-child { margin-bottom: 0; }
+        .dl-feature-item span { color: #4ade80; font-size: 18px; }
+        .dl-btn {
+            width: 100%; max-width: 340px; padding: 18px;
+            background: linear-gradient(180deg, #4ade80, #16a34a);
+            border: none; border-radius: 18px; color: white;
+            font-size: 20px; font-weight: 900; letter-spacing: 2px;
+            cursor: pointer; box-shadow: 0 8px 0 #0a1428, 0 12px 25px rgba(74, 222, 128, 0.5);
+            transition: all 0.15s; font-family: inherit; margin-bottom: 15px;
+        }
+        .dl-btn:active { transform: translateY(6px); box-shadow: 0 2px 0 #0a1428; }
+        .dl-skip {
+            color: #8aa2bf; font-size: 14px; text-decoration: underline;
+            cursor: pointer; padding: 10px; transition: color 0.2s;
+        }
+        .dl-skip:hover { color: #f87171; }
+        .dl-note { font-size: 11px; color: #8aa2bf; margin-top: 20px; max-width: 300px; line-height: 1.5; }
 
-        /* Install Popup Style */
-        .install-popup {
-            position: fixed; inset: 0; background: rgba(10, 5, 20, 0.95);
-            display: none; align-items: center; justify-content: center; z-index: 9999;
+        /* ---------- SPLASH STYLE ---------- */
+        #splash {
+            position: fixed; inset: 0; z-index: 9999;
+            background: radial-gradient(circle at 50% 50%, #2d1b4e 0%, #0a0514 50%, #050208 100%);
+            display: none; flex-direction: column; align-items: center; justify-content: center;
             padding: 20px;
         }
-        .install-popup.active { display: flex !important; }
-        .install-box {
-            background: linear-gradient(180deg, #2d1b4e, #0a0514);
-            padding: 35px 25px; border-radius: 24px;
-            border: 3px solid #a855f7; text-align: center;
-            max-width: 420px; width: 100%; color: white;
-            box-shadow: 0 0 40px rgba(168, 85, 247, 0.5), 0 20px 50px rgba(0,0,0,0.8);
-            animation: popIn 0.4s ease;
+        #splash.active { display: flex !important; }
+        .splash-title {
+            font-size: clamp(24px, 7vw, 42px); font-weight: 900; color: #a855f7;
+            text-align: center; letter-spacing: 2px;
+            text-shadow: 0 0 30px rgba(168, 85, 247, 0.8);
+            margin-bottom: 10px; animation: splashPulse 2s infinite;
         }
-        @keyframes popIn { from { transform: scale(0.8); opacity: 0; } to { transform: scale(1); opacity: 1; } }
-        .install-icon { font-size: 60px; margin-bottom: 15px; display: block; animation: float 2s ease-in-out infinite; }
-        @keyframes float { 0%, 100% { transform: translateY(0); } 50% { transform: translateY(-10px); } }
-        .install-box h2 { color: #a855f7; margin-bottom: 12px; font-size: 26px; letter-spacing: 1px; }
-        .install-box p { margin-bottom: 25px; color: #d0dae8; line-height: 1.6; font-size: 15px; }
-        .install-btn {
-            width: 100%; padding: 16px; border: none; border-radius: 15px;
-            background: linear-gradient(180deg, #4ade80, #16a34a);
-            color: white; font-size: 18px; font-weight: 900; letter-spacing: 2px;
-            cursor: pointer; box-shadow: 0 6px 0 #0a1428, 0 10px 20px rgba(74, 222, 128, 0.4);
-            margin-bottom: 12px; font-family: inherit; transition: all 0.15s;
+        @keyframes splashPulse {
+            0%, 100% { text-shadow: 0 0 30px rgba(168, 85, 247, 0.8); }
+            50% { text-shadow: 0 0 50px rgba(168, 85, 247, 1); }
         }
-        .install-btn:active { transform: translateY(4px); box-shadow: 0 2px 0 #0a1428; }
-        .later-btn {
-            width: 100%; padding: 12px; background: transparent;
-            border: 2px solid #4b5563; border-radius: 12px; color: #9ca3af;
-            font-size: 14px; cursor: pointer; font-family: inherit; transition: all 0.2s;
-        }
-        .later-btn:hover { border-color: #ef4444; color: #fca5a5; }
+        .splash-sub { font-size: clamp(12px, 3vw, 16px); color: #4ade80; font-style: italic; margin-bottom: 50px; letter-spacing: 1px; }
+        .progress-bar { width: 400px; max-width: 80vw; height: 20px; background: #1a0d2e; border: 2px solid #a855f7; border-radius: 15px; padding: 3px; position: relative; }
+        .progress-fill { height: 100%; width: 0%; background: linear-gradient(90deg, #a855f7 0%, #4ade80 100%); border-radius: 12px; transition: width 0.1s linear; }
     </style>
 </head>
 <body>
 
-<!-- INSTALL POPUP -->
-<div id="installPopup" class="install-popup active">
-    <div class="install-box">
-        <span class="install-icon">📲</span>
-        <h2>INSTALL CARD MATCH</h2>
-        <p>Apne device pe game install karo.<br>Full-screen app jaisa experience!</p>
-        <button id="btnInstallNow" class="install-btn">⬇ INSTALL NOW</button>
-        <button id="btnInstallLater" class="later-btn">Maybe Later</button>
+<!-- 1. DOWNLOAD SCREEN (Sabse pehle ye dikhega) -->
+<div id="downloadScreen">
+    <div class="dl-icon">🎮</div>
+    <h1 class="dl-title">Card Matching Game</h1>
+    <p class="dl-sub">★ 3D MEMORY CHALLENGE ★</p>
+
+    <div class="dl-features">
+        <div class="dl-feature-item"><span>✔</span> Full-screen 3D Gaming</div>
+        <div class="dl-feature-item"><span>✔</span> Play offline anytime</div>
+        <div class="dl-feature-item"><span>✔</span> Beat the timer & level up</div>
+        <div class="dl-feature-item"><span>✔</span> Install as a native app</div>
     </div>
+
+    <button id="dlInstallBtn" class="dl-btn">⬇ INSTALL GAME</button>
+    <div id="dlSkipBtn" class="dl-skip">Skip & Play in Browser</div>
+
+    <p class="dl-note">Note: This will add the game to your home screen (like an app).</p>
 </div>
 
-<!-- HOME SCREEN -->
+<!-- 2. SPLASH SCREEN (Login ke baad 5 second dikhega) -->
+<div id="splash">
+    <div class="splash-title">LOADING...</div>
+    <div class="splash-sub">★ 3D MEMORY CHALLENGE ★</div>
+    <div class="progress-bar"><div class="progress-fill" id="progressFill"></div></div>
+</div>
+
+<!-- 3. HOME SCREEN -->
 <div id="home" class="screen">
     <div class="home-top-bar">
         <button class="top-icon-btn" id="btnSettings">⚙️</button>
@@ -79,21 +121,9 @@
     <div class="home-sub">★ 3D MEMORY CHALLENGE ★</div>
     
     <div class="stats-row">
-        <div class="stat-card gold">
-            <span class="stat-icon">🏆</span>
-            <div class="stat-label">Best Level</div>
-            <div class="stat-value" id="statBestLevel">1</div>
-        </div>
-        <div class="stat-card">
-            <span class="stat-icon">⭐</span>
-            <div class="stat-label">Best Score</div>
-            <div class="stat-value" id="statBestScore">0</div>
-        </div>
-        <div class="stat-card cyan">
-            <span class="stat-icon">🎯</span>
-            <div class="stat-label">Matches</div>
-            <div class="stat-value" id="statMatches">0</div>
-        </div>
+        <div class="stat-card gold"><span class="stat-icon">🏆</span><div class="stat-label">Best Level</div><div class="stat-value" id="statBestLevel">1</div></div>
+        <div class="stat-card"><span class="stat-icon">⭐</span><div class="stat-label">Best Score</div><div class="stat-value" id="statBestScore">0</div></div>
+        <div class="stat-card cyan"><span class="stat-icon">🎯</span><div class="stat-label">Matches</div><div class="stat-value" id="statMatches">0</div></div>
     </div>
 
     <div class="button-grid">
@@ -106,7 +136,7 @@
     </div>
 </div>
 
-<!-- GAME SCREEN -->
+<!-- 4. GAME SCREEN -->
 <div id="game-screen" class="screen">
     <div class="game-top">
         <button class="mini-btn orange" id="btnGameHome">⬅ HOME</button>
@@ -129,7 +159,7 @@
     </div>
 </div>
 
-<!-- DIALOG -->
+<!-- DIALOGS -->
 <div class="dialog-overlay" id="dialogOverlay">
     <div class="dialog" id="dialog">
         <div class="dialog-title" id="dialogTitle"></div>
@@ -140,7 +170,7 @@
     </div>
 </div>
 
-<!-- MODALS (Profile, Settings, Help, Terms) -->
+<!-- MODALS -->
 <div class="modal-overlay" id="profileModal">
     <div class="modal-box profile-box">
         <button class="modal-close" id="closeProfile">✖</button>
@@ -150,7 +180,6 @@
         <div class="profile-info-list">
             <div class="profile-info-item"><div class="profile-info-icon">👤</div><div class="profile-info-content"><div class="profile-info-label">Name</div><div class="profile-info-value" id="profileInfoName">-</div></div></div>
             <div class="profile-info-item"><div class="profile-info-icon">📧</div><div class="profile-info-content"><div class="profile-info-label">Email</div><div class="profile-info-value" id="profileInfoIdentifier">-</div></div></div>
-            <div class="profile-info-item"><div class="profile-info-icon">🕐</div><div class="profile-info-content"><div class="profile-info-label">Login Time</div><div class="profile-info-value" id="profileInfoLoginTime">-</div></div></div>
             <div class="profile-info-item"><div class="profile-info-icon">✅</div><div class="profile-info-content"><div class="profile-info-label">Status</div><div class="profile-info-value" id="profileInfoStatus">-</div></div></div>
         </div>
     </div>
@@ -161,9 +190,9 @@
         <button class="modal-close" id="closeSettings">✖</button>
         <h2 class="modal-title">⚙️ Settings</h2>
         <div class="settings-list">
-            <button class="settings-item" id="btnHelp"><span class="settings-item-icon">❓</span><span class="settings-item-text"><strong>Help</strong><small>How to play</small></span><span class="settings-item-arrow">›</span></button>
-            <button class="settings-item" id="btnTerms"><span class="settings-item-icon">📜</span><span class="settings-item-text"><strong>Terms & Privacy</strong><small>Rules and data</small></span><span class="settings-item-arrow">›</span></button>
-            <button class="settings-item danger" id="btnLogout"><span class="settings-item-icon">🚪</span><span class="settings-item-text"><strong>Logout</strong><small>Sign out</small></span><span class="settings-item-arrow">›</span></button>
+            <button class="settings-item" id="btnHelp"><span class="settings-item-icon">❓</span><span class="settings-item-text"><strong>Help</strong><small>How to play</small></span></button>
+            <button class="settings-item" id="btnTerms"><span class="settings-item-icon">📜</span><span class="settings-item-text"><strong>Terms</strong><small>Rules and privacy</small></span></button>
+            <button class="settings-item danger" id="btnLogout"><span class="settings-item-icon">🚪</span><span class="settings-item-text"><strong>Logout</strong><small>Sign out</small></span></button>
         </div>
     </div>
 </div>
@@ -182,9 +211,8 @@
 <div class="modal-overlay" id="termsModal">
     <div class="modal-box info-box">
         <button class="modal-close" id="closeTerms">✖</button>
-        <h2 class="modal-title">📜 Terms & Privacy</h2>
+        <h2 class="modal-title">📜 Terms</h2>
         <div class="info-content">
-            <p><strong>🎯 Purpose:</strong> Memory improvement game.</p>
             <p><strong>🔒 Privacy:</strong> Data securely stored.</p>
         </div>
     </div>
@@ -194,30 +222,69 @@
 <script src="pwa.js"></script>
 <script src="game.js"></script>
 <script>
-    // Install Popup Logic
-    setTimeout(function() {
-        var popup = document.getElementById('installPopup');
-        var installBtn = document.getElementById('btnInstallNow');
-        var laterBtn = document.getElementById('btnInstallLater');
+    document.addEventListener('DOMContentLoaded', function() {
+        var downloadScreen = document.getElementById('downloadScreen');
+        var splash = document.getElementById('splash');
+        var installBtn = document.getElementById('dlInstallBtn');
+        var skipBtn = document.getElementById('dlSkipBtn');
 
-        if (window.matchMedia('(display-mode: standalone)').matches) {
-            popup.classList.remove('active');
+        // CHECK: Agar user already installed hai, to download screen skip karo
+        if (localStorage.getItem('card_matching_installed') === 'true') {
+            downloadScreen.style.display = 'none';
+            if (!localStorage.getItem('card_matching_token')) {
+                window.location.href = 'login.html';
+            } else {
+                showSplash();
+            }
         }
 
-        laterBtn.addEventListener('click', function() { popup.classList.remove('active'); });
-
+        // INSTALL BUTTON
         installBtn.addEventListener('click', function() {
             if (window.deferredPrompt) {
                 window.deferredPrompt.prompt();
                 window.deferredPrompt.userChoice.then(function(choice) {
-                    if (choice.outcome === 'accepted') popup.classList.remove('active');
+                    if (choice.outcome === 'accepted') {
+                        localStorage.setItem('card_matching_installed', 'true');
+                        downloadScreen.style.display = 'none';
+                        window.location.href = 'login.html';
+                    }
                     window.deferredPrompt = null;
                 });
             } else {
-                alert('Browser menu (⋮) → "Install App" use karo.');
+                // Fallback: Agar prompt nahi, to direct login
+                localStorage.setItem('card_matching_installed', 'true');
+                downloadScreen.style.display = 'none';
+                window.location.href = 'login.html';
             }
         });
-    }, 500);
+
+        // SKIP BUTTON
+        skipBtn.addEventListener('click', function() {
+            localStorage.setItem('card_matching_installed', 'true');
+            downloadScreen.style.display = 'none';
+            window.location.href = 'login.html';
+        });
+
+        // SPLASH LOGIC (5 seconds)
+        function showSplash() {
+            splash.classList.add('active');
+            var progress = 0;
+            var fill = document.getElementById('progressFill');
+            var interval = setInterval(function() {
+                progress += 2;
+                if (progress > 100) progress = 100;
+                fill.style.width = progress + '%';
+                if (progress >= 100) {
+                    clearInterval(interval);
+                    setTimeout(function() {
+                        splash.classList.remove('active');
+                        document.getElementById('home').classList.add('active');
+                        if (typeof renderHome === 'function') renderHome();
+                    }, 500);
+                }
+            }, 100); // 100 * 50ms = 5 seconds
+        }
+    });
 </script>
 </body>
 </html>
