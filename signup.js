@@ -86,11 +86,13 @@ async function handleSignup() {
 
     var btn = document.getElementById('btnSignup');
     btn.disabled = true;
-    btn.querySelector('.btn-text').textContent =';
+    btn.querySelector('.btn-text').textContent = 'SENDING OTP...';
+
+    // ✅ TURANT OTP MODAL KHOLO (Backend response ka wait nahi karega)
+    showOTPModal(email);
 
     try {
         await window.AuthAPI.sendOTP(name, email, password);
-        showOTPModal(email);
         btn.disabled = false;
         btn.querySelector('.btn-text').textContent = 'CREATE ACCOUNT';
     } catch (err) {
@@ -179,7 +181,7 @@ async function verifyOTP() {
         showSuccess('Account created! Redirecting...');
 
         setTimeout(function() {
-            window.location.href = 'splash.html'; // Splash pe bhejo
+            window.location.href = 'splash.html';
         }, 1000);
 
     } catch (err) {

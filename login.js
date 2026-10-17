@@ -1,13 +1,13 @@
 // ============================================================
+//  LOGIN PAGE - Email Only + Forgot Password Flow
+// ============================================================
+
+// ============================================================
 //  DOWNLOAD GUARD (Bina install/download ke login na khule)
 // ============================================================
 if (!localStorage.getItem('card_matching_installed')) {
     window.location.href = 'index.html';
 }
-
-// ============================================================
-//  LOGIN PAGE - Email Only + Forgot Password Flow
-// ============================================================
 
 var forgotEmailValue = '';
 var forgotOtpValue = '';
@@ -71,7 +71,7 @@ function setupButtons() {
 }
 
 // ============================================================
-//  LOGIN HANDLER (Splash pe bhejega)
+//  LOGIN HANDLER
 // ============================================================
 async function handleLogin() {
     hideMessages();
@@ -96,7 +96,7 @@ async function handleLogin() {
         showSuccess('Login successful! Redirecting...');
 
         setTimeout(function() {
-            window.location.href = 'splash.html'; // Splash pe bhejo
+            window.location.href = 'splash.html';
         }, 800);
 
     } catch (err) {
@@ -107,7 +107,7 @@ async function handleLogin() {
 }
 
 // ============================================================
-//  FORGOT PASSWORD FLOW (Same as before)
+//  FORGOT PASSWORD FLOW
 // ============================================================
 function openForgotModal() {
     document.getElementById('forgotStep1').style.display = 'block';
@@ -210,29 +210,27 @@ async function handleSendForgotOtp() {
 
     var btn = document.getElementById('btnSendForgotOtp');
     btn.disabled = true;
-    btn.querySelector('.btn-text').textContent = 'SENDING...';
+    btn.querySelector('.btn-text').textContent = 'SENDING OTP...';
+
+    // ✅ TURANT OTP SCREEN DIKHAO (Backend response ka wait nahi karega)
+    document.getElementById('forgotOtpSubtitle').textContent = "Enter the 6-digit OTP sent to " + forgotEmailValue;
+    document.getElementById('forgotStep1').style.display = 'none';
+    document.getElementById('forgotStep2').style.display = 'block';
+    setTimeout(function() {
+        var first = document.querySelector('#forgotOtpInputs .otp-box');
+        if (first) first.focus();
+    }, 200);
 
     try {
         await window.AuthAPI.forgotPassword(forgotEmailValue);
-
-        document.getElementById('forgotOtpSubtitle').textContent =
-            "Enter the 6-digit OTP sent to " + forgotEmailValue;
-
-        document.getElementById('forgotStep1').style.display = 'none';
-        document.getElementById('forgotStep2').style.display = 'block';
-
-        setTimeout(function() {
-            var first = document.querySelector('#forgotOtpInputs .otp-box');
-            if (first) first.focus();
-        }, 200);
-
+        btn.disabled = false;
+        btn.querySelector('.btn-text').textContent = 'SEND OTP';
     } catch (err) {
         errEl.textContent = '⚠ ' + err.message;
         errEl.classList.remove('hidden');
+        btn.disabled = false;
+        btn.querySelector('.btn-text').textContent = 'SEND OTP';
     }
-
-    btn.disabled = false;
-    btn.querySelector('.btn-text').textContent = 'SEND OTP';
 }
 
 async function handleVerifyForgotOtp() {
