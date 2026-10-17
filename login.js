@@ -206,7 +206,7 @@ async function handleSendForgotOtp() {
     btn.disabled = true;
     btn.querySelector('.btn-text').textContent = 'SENDING OTP...';
 
-    // ✅ TURANT OTP SCREEN DIKHAO (Backend response ka wait nahi karega)
+    // ✅ TURANT OTP SCREEN DIKHAO
     document.getElementById('forgotOtpSubtitle').textContent = "Enter the 6-digit OTP sent to " + forgotEmailValue;
     document.getElementById('forgotStep1').style.display = 'none';
     document.getElementById('forgotStep2').style.display = 'block';
