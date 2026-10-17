@@ -1,5 +1,5 @@
 // ============================================================
-//  CARD MATCHING GAME
+//  CARD MATCHING GAME - WITH TIMER & 3D UI
 // ============================================================
 
 var SYMBOLS = ['★', '◆', '●', '▲', '■', '✦', '✚', '✖', '⬟', '⬢',
@@ -8,13 +8,12 @@ var SYMBOLS = ['★', '◆', '●', '▲', '■', '✦', '✚', '✖', '⬟', '�
 var MAX_HINTS = 3;
 var MATCH_POINTS = 100;
 var WRONG_PENALTY = 25;
-var INFINITE_LEVELS = 1000;
 var USER_KEY = 'card_matching_user_v1';
 
-// ============================================================
-//  USER-SPECIFIC SAVE KEY
-//  Har user ka progress alag rahega (email ke saath linked)
-// ============================================================
+// Timer Variables
+var timerInterval = null;
+var timeLeft = 0;
+
 function getSaveKey() {
     try {
         var raw = localStorage.getItem(USER_KEY);
@@ -52,7 +51,6 @@ var state = {
     hintActive: false,
     cardValues: [],
     cards: [],
-    pathScrollOffset: 0,
     soundOn: true
 };
 
@@ -88,7 +86,6 @@ function playMatchSound() {
 
 function saveProgress() {
     try {
-        // Re-compute key each time (in case user changed)
         SAVE_KEY = getSaveKey();
         localStorage.setItem(SAVE_KEY, JSON.stringify({
             unlockedLevel: state.unlockedLevel,
@@ -103,7 +100,6 @@ function saveProgress() {
 }
 
 function loadProgress() {
-    // Always reset state first (important for new users)
     state.unlockedLevel = 1;
     state.totalScore = 0;
     state.bestLevel = 1;
@@ -135,295 +131,47 @@ function showScreen(id) {
 }
 
 // ============================================================
-//  SPLASH SCREEN
+//  TIMER FUNCTIONS
 // ============================================================
-function startSplash() {
-    var progress = 0;
-    var fill = $('progressFill');
-    var text = $('progressText');
-
-    if (!fill || !text) return;
-
-    var interval = setInterval(function() {
-        progress += 2;
-        if (progress > 100) progress = 100;
-        fill.style.width = progress + '%';
-        text.textContent = progress + ' %';
-
-        if (progress >= 100) {
-            clearInterval(interval);
-            setTimeout(function() {
-                var splash = $('splash');
-                if (splash) splash.classList.add('hide');
-                setTimeout(function() {
-                    if (splash) splash.style.display = 'none';
-                    showScreen('home');
-                    renderHome();
-                    setTimeout(function() {
-                        resizePathCanvas();
-                        drawPath();
-                    }, 100);
-                }, 600);
-            }, 300);
+function startTimer(seconds) {
+    clearInterval(timerInterval);
+    timeLeft = seconds;
+    updateTimerDisplay();
+    
+    timerInterval = setInterval(function() {
+        if (state.paused || state.gameOver) return;
+        
+        timeLeft--;
+        updateTimerDisplay();
+        
+        if (timeLeft <= 0) {
+            clearInterval(timerInterval);
+            levelFailed(true); // Time's up
         }
-    }, 100);
+    }, 1000);
+}
+
+function updateTimerDisplay() {
+    var el = $('timerDisplay');
+    if (!el) return;
+    var m = Math.floor(timeLeft / 60);
+    var s = timeLeft % 60;
+    el.textContent = '⏱️ ' + (m < 10 ? '0' : '') + m + ':' + (s < 10 ? '0' : '') + s;
+    
+    if (timeLeft <= 10) {
+        el.classList.add('warning');
+    } else {
+        el.classList.remove('warning');
+    }
+}
+
+function stopTimer() {
+    clearInterval(timerInterval);
 }
 
 // ============================================================
-//  LEVEL PATH
+//  GAME START
 // ============================================================
-var pathCanvas, pathCtx;
-var dragStartX = 0, dragStartOffset = 0, dragging = false, dragMoved = 0;
-
-function initLevelPath() {
-    pathCanvas = $('levelPath');
-    if (!pathCanvas) return;
-    pathCtx = pathCanvas.getContext('2d');
-    resizePathCanvas();
-    drawPath();
-    setupPathEvents();
-    window.addEventListener('resize', function() {
-        resizePathCanvas();
-        drawPath();
-    });
-}
-
-function resizePathCanvas() {
-    if (!pathCanvas) return;
-    var rect = pathCanvas.getBoundingClientRect();
-    var dpr = window.devicePixelRatio || 1;
-    pathCanvas.width = rect.width * dpr;
-    pathCanvas.height = rect.height * dpr;
-    pathCtx.setTransform(dpr, 0, 0, dpr, 0, 0);
-}
-
-function drawPath() {
-    if (!pathCtx || !pathCanvas) return;
-    var dpr = window.devicePixelRatio || 1;
-    var w = pathCanvas.width / dpr;
-    var h = pathCanvas.height / dpr;
-    if (w < 10 || h < 10) return;
-
-    pathCtx.clearRect(0, 0, w, h);
-
-    var padding = 60;
-    var spacing = Math.max(100, w / 5);
-    var midY = h / 2;
-    var totalLevels = INFINITE_LEVELS;
-
-    var points = [];
-    for (var i = 0; i < totalLevels; i++) {
-        var px = padding + i * spacing - state.pathScrollOffset;
-        var py = midY + Math.sin(i * 0.85) * (h * 0.22);
-        points.push({ x: px, y: py });
-    }
-
-    for (var glow = 6; glow > 0; glow--) {
-        pathCtx.beginPath();
-        pathCtx.strokeStyle = 'rgba(60, 140, 255, ' + (0.05 * glow) + ')';
-        pathCtx.lineWidth = glow * 3;
-        drawSmoothPath(pathCtx, points, w);
-        pathCtx.stroke();
-    }
-
-    pathCtx.beginPath();
-    pathCtx.strokeStyle = '#78beff';
-    pathCtx.lineWidth = 4;
-    pathCtx.lineCap = 'round';
-    drawSmoothPath(pathCtx, points, w);
-    pathCtx.stroke();
-
-    for (var i2 = 0; i2 < totalLevels; i2++) {
-        var p = points[i2];
-        if (p.x < -100 || p.x > w + 100) continue;
-
-        var levelNum = i2 + 1;
-        var isUnlocked = levelNum <= state.unlockedLevel;
-        var isCurrent = levelNum === state.unlockedLevel;
-        var isCompleted = state.completedLevels.has(levelNum);
-        var radius = 30;
-
-        pathCtx.beginPath();
-        pathCtx.arc(p.x + 2, p.y + 3, radius, 0, Math.PI * 2);
-        pathCtx.fillStyle = 'rgba(0,0,0,0.5)';
-        pathCtx.fill();
-
-        if (isCurrent) {
-            var pulse = 3 + Math.abs(Math.sin(Date.now() * 0.004)) * 4;
-            pathCtx.beginPath();
-            pathCtx.arc(p.x, p.y, radius + pulse, 0, Math.PI * 2);
-            pathCtx.fillStyle = 'rgba(80, 220, 255, 0.25)';
-            pathCtx.fill();
-        }
-
-        var grad = pathCtx.createRadialGradient(
-            p.x - radius * 0.3, p.y - radius * 0.3, 0,
-            p.x, p.y, radius
-        );
-        if (!isUnlocked) {
-            grad.addColorStop(0, '#4a4f5f');
-            grad.addColorStop(1, '#23262e');
-        } else if (isCurrent) {
-            grad.addColorStop(0, '#50dcff');
-            grad.addColorStop(1, '#1e5ccf');
-        } else if (isCompleted) {
-            grad.addColorStop(0, '#78beff');
-            grad.addColorStop(1, '#3c8cff');
-        } else {
-            grad.addColorStop(0, '#3c8cff');
-            grad.addColorStop(1, '#0f2350');
-        }
-        pathCtx.beginPath();
-        pathCtx.arc(p.x, p.y, radius, 0, Math.PI * 2);
-        pathCtx.fillStyle = grad;
-        pathCtx.fill();
-
-        pathCtx.beginPath();
-        pathCtx.arc(p.x, p.y, radius, 0, Math.PI * 2);
-        pathCtx.strokeStyle = isUnlocked ? '#f0f5ff' : '#8c90a0';
-        pathCtx.lineWidth = 2.5;
-        pathCtx.stroke();
-
-        pathCtx.fillStyle = isUnlocked ? '#000' : '#fff';
-        pathCtx.font = 'bold 20px Arial';
-        pathCtx.textAlign = 'center';
-        pathCtx.textBaseline = 'middle';
-        pathCtx.fillText(levelNum.toString(), p.x, p.y + 1);
-
-        if (!isUnlocked) {
-            pathCtx.font = '16px Arial';
-            pathCtx.fillStyle = '#fff';
-            pathCtx.fillText('🔒', p.x + radius - 8, p.y - radius + 8);
-        }
-
-        if (isUnlocked && isCompleted) {
-            pathCtx.font = 'bold 16px Arial';
-            pathCtx.fillStyle = '#ffca2d';
-            pathCtx.fillText('★', p.x + radius - 8, p.y - radius + 8);
-        }
-    }
-}
-
-function drawSmoothPath(ctx, points, w) {
-    var started = false;
-    for (var i = 0; i < points.length; i++) {
-        var p = points[i];
-        if (p.x < -200) continue;
-        if (p.x > w + 200) break;
-        if (!started) {
-            ctx.moveTo(p.x, p.y);
-            started = true;
-        } else {
-            var prev = points[i - 1];
-            var cx = (prev.x + p.x) / 2;
-            ctx.bezierCurveTo(cx, prev.y, cx, p.y, p.x, p.y);
-        }
-    }
-}
-
-function setupPathEvents() {
-    pathCanvas.addEventListener('mousedown', function(e) {
-        dragging = true;
-        dragStartX = e.clientX;
-        dragStartOffset = state.pathScrollOffset;
-        dragMoved = 0;
-        pathCanvas.style.cursor = 'grabbing';
-    });
-
-    window.addEventListener('mousemove', function(e) {
-        if (!dragging) return;
-        var dx = e.clientX - dragStartX;
-        dragMoved = Math.max(dragMoved, Math.abs(dx));
-        state.pathScrollOffset = Math.max(0, dragStartOffset - dx);
-        drawPath();
-    });
-
-    window.addEventListener('mouseup', function(e) {
-        if (!dragging) return;
-        dragging = false;
-        pathCanvas.style.cursor = 'grab';
-        if (dragMoved < 8) handlePathClick(e.clientX, e.clientY);
-    });
-
-    pathCanvas.addEventListener('touchstart', function(e) {
-        var t = e.touches[0];
-        dragging = true;
-        dragStartX = t.clientX;
-        dragStartOffset = state.pathScrollOffset;
-        dragMoved = 0;
-    }, { passive: true });
-
-    pathCanvas.addEventListener('touchmove', function(e) {
-        if (!dragging) return;
-        var t = e.touches[0];
-        var dx = t.clientX - dragStartX;
-        dragMoved = Math.max(dragMoved, Math.abs(dx));
-        state.pathScrollOffset = Math.max(0, dragStartOffset - dx);
-        drawPath();
-    }, { passive: true });
-
-    pathCanvas.addEventListener('touchend', function(e) {
-        if (!dragging) return;
-        dragging = false;
-        if (dragMoved < 8 && e.changedTouches[0]) {
-            handlePathClick(e.changedTouches[0].clientX, e.changedTouches[0].clientY);
-        }
-    });
-
-    pathCanvas.addEventListener('wheel', function(e) {
-        e.preventDefault();
-        state.pathScrollOffset = Math.max(0, state.pathScrollOffset + e.deltaY * 0.8);
-        drawPath();
-    }, { passive: false });
-}
-
-function handlePathClick(clientX, clientY) {
-    var rect = pathCanvas.getBoundingClientRect();
-    var x = clientX - rect.left;
-    var y = clientY - rect.top;
-    var w = rect.width;
-    var h = rect.height;
-    var padding = 60;
-    var spacing = Math.max(100, w / 5);
-    var midY = h / 2;
-
-    for (var i = 0; i < INFINITE_LEVELS; i++) {
-        var px = padding + i * spacing - state.pathScrollOffset;
-        var py = midY + Math.sin(i * 0.85) * (h * 0.22);
-        var levelNum = i + 1;
-
-        var dist = Math.hypot(x - px, y - py);
-        if (dist < 35) {
-            if (levelNum <= state.unlockedLevel) {
-                startGame(levelNum);
-            } else {
-                alert('Level ' + levelNum + ' is locked!');
-            }
-            return;
-        }
-    }
-}
-
-function renderHome() {
-    var el1 = $('statBestLevel');
-    var el2 = $('statBestScore');
-    var el3 = $('statMatches');
-    var el4 = $('btnSound');
-
-    if (el1) el1.textContent = state.bestLevel;
-    if (el2) el2.textContent = getBestScore();
-    if (el3) el3.textContent = state.totalMatches;
-    if (el4) el4.textContent = state.soundOn ? '🔊 Sound' : '🔇 Sound';
-}
-
-function getBestScore() {
-    var best = 0;
-    for (var k in state.levelBestScores) {
-        if (state.levelBestScores[k] > best) best = state.levelBestScores[k];
-    }
-    return best;
-}
-
 function startGame(level) {
     initAudio();
     state.currentLevel = level;
@@ -443,6 +191,12 @@ function startGame(level) {
     updateHUD();
     renderCards();
     showScreen('game-screen');
+    
+    // Level Timer (Level 1: 40s, Level 2: 50s, ... +10s per level)
+    var levelTime = 40 + (level - 1) * 10;
+    startTimer(levelTime);
+    
+    $('levelBadge').textContent = level;
 }
 
 function configureLevel(level) {
@@ -489,10 +243,8 @@ function renderCards() {
 }
 
 function getColor(idx) {
-    var colors = ['#78beff', '#f87171', '#50dcff', '#4ade80', '#c084fc',
-                  '#fb923c', '#50dcff', '#f472b6', '#60a5fa', '#78beff',
-                  '#60a5fa', '#f87171', '#ffca2d', '#f472b6', '#fb923c',
-                  '#c084fc', '#4ade80', '#50dcff', '#78beff', '#f472b6'];
+    var colors = ['#c084fc', '#f87171', '#4ade80', '#facc15', '#38bdf8',
+                  '#fb923c', '#f472b6', '#a855f7', '#c084fc', '#4ade80'];
     return colors[idx % colors.length];
 }
 
@@ -542,7 +294,7 @@ function checkMatch() {
 
         playMatchSound();
         updateHUD();
-        setStatus('MATCH! +' + MATCH_POINTS + ' (' + state.matchedPairs + '/' + state.pairs + ')');
+        setStatus('MATCH! +' + MATCH_POINTS);
 
         state.firstCard = null;
         state.secondCard = null;
@@ -551,15 +303,11 @@ function checkMatch() {
             setTimeout(finishLevel, 600);
         }
     } else {
-        var oldScore = state.score;
         state.score = Math.max(0, state.score - WRONG_PENALTY);
-        var deducted = oldScore - state.score;
-
         state.cards[a].el.classList.add('wrong');
         state.cards[b].el.classList.add('wrong');
         updateHUD();
-        setStatus('WRONG PAIR -' + deducted);
-
+        setStatus('WRONG PAIR');
         state.waiting = true;
 
         setTimeout(function() {
@@ -573,7 +321,7 @@ function checkMatch() {
             state.waiting = false;
 
             if (state.flipsUsed >= state.flipsAllowed && state.matchedPairs < state.pairs) {
-                levelFailed();
+                levelFailed(false);
             } else {
                 setStatus('TRY AGAIN');
             }
@@ -614,7 +362,7 @@ function useHint() {
             state.hintsLeft--;
             state.hintActive = true;
             updateHUD();
-            setStatus('HINT USED (' + state.hintsLeft + ' left)');
+            setStatus('HINT USED');
 
             state.cards[a].el.classList.add('hinted', 'flipped');
             state.cards[b].el.classList.add('hinted', 'flipped');
@@ -639,6 +387,7 @@ function useHint() {
 
 function finishLevel() {
     state.gameOver = true;
+    stopTimer(); // Stop the timer on level complete
 
     var prev = state.levelBestScores[state.currentLevel] || 0;
     if (state.score > prev) {
@@ -668,23 +417,24 @@ function finishLevel() {
         type: 'success',
         title: 'CONGRATULATIONS!',
         sub: 'Level ' + state.currentLevel + ' Complete!',
-        score: 'Level Score: ' + state.score + ' | Total: ' + state.totalScore,
+        score: 'Score: ' + state.score + ' | Time Left: ' + timeLeft + 's',
         next: '▶ NEXT LEVEL: ' + (state.currentLevel + 1),
         buttons: [
             { label: '🏠 HOME', cls: 'btn-home', action: function() { closeDialog(); goHome(); } },
-            { label: '▶ NEXT', cls: 'btn-next', action: function() { closeDialog(); startGame(state.currentLevel + 1); } },
-            { label: '⏹ STOP', cls: 'btn-stop', action: function() { closeDialog(); goHome(); } }
+            { label: '▶ NEXT', cls: 'btn-next', action: function() { closeDialog(); startGame(state.currentLevel + 1); } }
         ]
     });
 }
 
-function levelFailed() {
+function levelFailed(isTimeOut) {
     state.gameOver = true;
+    stopTimer();
+
     showDialog({
         type: 'fail',
-        title: 'LEVEL FAILED!',
-        sub: 'Flips khatam ho gaye!',
-        score: 'Level ' + state.currentLevel + ' wapas khelna padega\nFlips used: ' + state.flipsUsed + ' / ' + state.flipsAllowed,
+        title: isTimeOut ? 'TIME UP!' : 'LEVEL FAILED!',
+        sub: isTimeOut ? 'Time limit khatam ho gaya!' : 'Flips khatam ho gaye!',
+        score: 'Level ' + state.currentLevel + ' wapas khelna padega.',
         next: '',
         buttons: [
             { label: '🏠 HOME', cls: 'btn-home', action: function() { closeDialog(); goHome(); } },
@@ -720,17 +470,34 @@ function closeDialog() {
 
 function goHome() {
     state.gameOver = true;
+    stopTimer(); // Stop timer if user goes back to home
     renderHome();
-    setTimeout(function() {
-        resizePathCanvas();
-        drawPath();
-    }, 100);
     showScreen('home');
+}
+
+function renderHome() {
+    var el1 = $('statBestLevel');
+    var el2 = $('statBestScore');
+    var el3 = $('statMatches');
+    var el4 = $('btnSound');
+
+    if (el1) el1.textContent = state.bestLevel;
+    if (el2) el2.textContent = getBestScore();
+    if (el3) el3.textContent = state.totalMatches;
+    if (el4) el4.textContent = state.soundOn ? '🔊 SOUND' : '🔇 SOUND';
+}
+
+function getBestScore() {
+    var best = 0;
+    for (var k in state.levelBestScores) {
+        if (state.levelBestScores[k] > best) best = state.levelBestScores[k];
+    }
+    return best;
 }
 
 function setupButtons() {
     $('btnPlay').onclick = function() { startGame(state.unlockedLevel); };
-    $('btnLevels').onclick = function() { alert('Click any level on the path above!'); };
+    $('btnLevels').onclick = function() { alert('Level path coming soon!'); };
     $('btnSound').onclick = function() {
         state.soundOn = !state.soundOn;
         saveProgress();
@@ -741,7 +508,7 @@ function setupButtons() {
             type: 'success',
             title: 'RULES',
             sub: 'How to Play',
-            score: '• Fixed flips per level\n• Correct match: +' + MATCH_POINTS + ' points\n• Wrong match: -' + WRONG_PENALTY + ' points\n• Score never goes below 0\n• 3 Hints per level\n• Infinite levels\n• Drag the level line to scroll',
+            score: '• Match cards to score points\n• +100 points for a correct match\n• -25 points for a wrong match\n• Beat the timer to win!\n• 3 Hints per level',
             next: '',
             buttons: [{ label: 'OK', cls: 'btn-next', action: closeDialog }]
         });
@@ -750,21 +517,13 @@ function setupButtons() {
         if (confirm('Delete all progress?')) {
             SAVE_KEY = getSaveKey();
             localStorage.removeItem(SAVE_KEY);
-            state.unlockedLevel = 1;
-            state.totalScore = 0;
-            state.bestLevel = 1;
-            state.totalMatches = 0;
-            state.completedLevels = new Set();
-            state.levelBestScores = {};
-            state.pathScrollOffset = 0;
+            loadProgress();
             renderHome();
-            drawPath();
         }
     };
     $('btnExit').onclick = function() {
         saveProgress();
         if (confirm('Logout and close?')) {
-            // Sirf user aur token remove karo — game progress (per-user key) rehne do
             localStorage.removeItem(USER_KEY);
             localStorage.removeItem('card_matching_token');
             window.location.href = 'login.html';
@@ -772,7 +531,6 @@ function setupButtons() {
     };
 
     $('btnGameHome').onclick = goHome;
-    $('btnGameLevels').onclick = goHome;
     $('btnHint').onclick = useHint;
     $('btnPause').onclick = function() {
         if (state.gameOver) return;
@@ -786,7 +544,7 @@ function setupButtons() {
 }
 
 // ============================================================
-//  PROFILE
+//  PROFILE & SETTINGS
 // ============================================================
 function openProfileModal() {
     var user = null;
@@ -797,49 +555,16 @@ function openProfileModal() {
 
     var nameEl = document.getElementById('profileName');
     if (nameEl) nameEl.textContent = user && user.name ? user.name : 'Guest Player';
-
-    var typeBadge = document.getElementById('profileTypeBadge');
-    if (typeBadge) {
-        if (user && user.type === 'mobile') typeBadge.textContent = '📱 Mobile Account';
-        else if (user && user.type === 'email') typeBadge.textContent = '📧 Email Account';
-        else typeBadge.textContent = '❓ Unknown';
-    }
-
-    var nameField = document.getElementById('profileInfoName');
-    if (nameField) nameField.textContent = user && user.name ? user.name : 'Guest Player';
-
     var idField = document.getElementById('profileInfoIdentifier');
     if (idField) idField.textContent = user && user.identifier ? user.identifier : 'Not logged in';
-
-    var accountTypeField = document.getElementById('profileInfoAccountType');
-    if (accountTypeField) {
-        if (user && user.type === 'mobile') accountTypeField.textContent = 'Mobile Number';
-        else if (user && user.type === 'email') accountTypeField.textContent = 'Email Address';
-        else accountTypeField.textContent = 'Guest';
-    }
-
+    
     var loginTimeField = document.getElementById('profileInfoLoginTime');
-    if (loginTimeField) {
-        if (user && user.loginTime) {
-            var date = new Date(user.loginTime);
-            loginTimeField.textContent = date.toLocaleString('en-IN', {
-                day: '2-digit', month: 'short', year: 'numeric',
-                hour: '2-digit', minute: '2-digit'
-            });
-        } else {
-            loginTimeField.textContent = 'Just now';
-        }
-    }
+    if (loginTimeField) loginTimeField.textContent = new Date().toLocaleString();
 
     var statusField = document.getElementById('profileInfoStatus');
     if (statusField) {
-        if (user && user.loggedIn) {
-            statusField.textContent = '✅ Active & Verified';
-            statusField.style.color = '#4ade80';
-        } else {
-            statusField.textContent = '❌ Not logged in';
-            statusField.style.color = '#f87171';
-        }
+        statusField.textContent = '✅ Active';
+        statusField.style.color = '#4ade80';
     }
 
     document.getElementById('profileModal').classList.add('active');
@@ -877,7 +602,6 @@ function closeTermsModal() {
 
 function handleLogout() {
     if (confirm('Kya aap logout karna chahte ho?')) {
-        // Sirf user aur token remove karo — game progress (per-user key) safe rahega
         localStorage.removeItem(USER_KEY);
         localStorage.removeItem('card_matching_token');
         window.location.href = 'login.html';
@@ -919,14 +643,6 @@ function setupProfileAndSettings() {
             }
         });
     });
-
-    document.addEventListener('keydown', function(e) {
-        if (e.key === 'Escape') {
-            document.querySelectorAll('.modal-overlay').forEach(function(o) {
-                o.classList.remove('active');
-            });
-        }
-    });
 }
 
 // ============================================================
@@ -934,8 +650,9 @@ function setupProfileAndSettings() {
 // ============================================================
 window.addEventListener('DOMContentLoaded', function() {
     loadProgress();
-    initLevelPath();
     setupButtons();
     setupProfileAndSettings();
-    startSplash();
+    renderHome();
+    // Splash screen is removed, direct home screen
+    showScreen('home');
 });

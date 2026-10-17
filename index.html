@@ -2,8 +2,8 @@
 <html lang="en">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <meta name="theme-color" content="#0a0f23">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+    <meta name="theme-color" content="#0a0514">
     <title>Card Matching Game</title>
 
     <!-- PWA -->
@@ -16,19 +16,60 @@
     <meta name="application-name" content="CardMatch">
 
     <link rel="stylesheet" href="style.css">
+    <style>
+        /* Splash hata diya */
+        #splash { display: none !important; }
+
+        /* Install Popup Style */
+        .install-popup {
+            position: fixed; inset: 0; background: rgba(10, 5, 20, 0.95);
+            display: none; align-items: center; justify-content: center; z-index: 9999;
+            padding: 20px;
+        }
+        .install-popup.active { display: flex !important; }
+        .install-box {
+            background: linear-gradient(180deg, #2d1b4e, #0a0514);
+            padding: 35px 25px; border-radius: 24px;
+            border: 3px solid #a855f7; text-align: center;
+            max-width: 420px; width: 100%; color: white;
+            box-shadow: 0 0 40px rgba(168, 85, 247, 0.5), 0 20px 50px rgba(0,0,0,0.8);
+            animation: popIn 0.4s ease;
+        }
+        @keyframes popIn { from { transform: scale(0.8); opacity: 0; } to { transform: scale(1); opacity: 1; } }
+        .install-icon { font-size: 60px; margin-bottom: 15px; display: block; animation: float 2s ease-in-out infinite; }
+        @keyframes float { 0%, 100% { transform: translateY(0); } 50% { transform: translateY(-10px); } }
+        .install-box h2 { color: #a855f7; margin-bottom: 12px; font-size: 26px; letter-spacing: 1px; }
+        .install-box p { margin-bottom: 25px; color: #d0dae8; line-height: 1.6; font-size: 15px; }
+        .install-btn {
+            width: 100%; padding: 16px; border: none; border-radius: 15px;
+            background: linear-gradient(180deg, #4ade80, #16a34a);
+            color: white; font-size: 18px; font-weight: 900; letter-spacing: 2px;
+            cursor: pointer; box-shadow: 0 6px 0 #0a1428, 0 10px 20px rgba(74, 222, 128, 0.4);
+            margin-bottom: 12px; font-family: inherit; transition: all 0.15s;
+        }
+        .install-btn:active { transform: translateY(4px); box-shadow: 0 2px 0 #0a1428; }
+        .later-btn {
+            width: 100%; padding: 12px; background: transparent;
+            border: 2px solid #4b5563; border-radius: 12px; color: #9ca3af;
+            font-size: 14px; cursor: pointer; font-family: inherit; transition: all 0.2s;
+        }
+        .later-btn:hover { border-color: #ef4444; color: #fca5a5; }
+    </style>
 </head>
 <body>
 
-<div id="splash">
-    <div class="splash-title">CARD MATCHING GAME</div>
-    <div class="splash-sub">★ 3D MEMORY CHALLENGE ★</div>
-    <div class="progress-bar">
-        <div class="loading-text">LOADING...</div>
-        <div class="progress-fill" id="progressFill"></div>
+<!-- INSTALL POPUP -->
+<div id="installPopup" class="install-popup active">
+    <div class="install-box">
+        <span class="install-icon">📲</span>
+        <h2>INSTALL CARD MATCH</h2>
+        <p>Apne device pe game install karo.<br>Full-screen app jaisa experience!</p>
+        <button id="btnInstallNow" class="install-btn">⬇ INSTALL NOW</button>
+        <button id="btnInstallLater" class="later-btn">Maybe Later</button>
     </div>
-    <div class="progress-text" id="progressText">0 %</div>
 </div>
 
+<!-- HOME SCREEN -->
 <div id="home" class="screen">
     <div class="home-top-bar">
         <button class="top-icon-btn" id="btnSettings">⚙️</button>
@@ -36,10 +77,7 @@
     </div>
     <div class="home-title">CARD MATCHING</div>
     <div class="home-sub">★ 3D MEMORY CHALLENGE ★</div>
-    <div class="section-heading">LEVELS</div>
-    <div class="level-path-container">
-        <canvas id="levelPath"></canvas>
-    </div>
+    
     <div class="stats-row">
         <div class="stat-card gold">
             <span class="stat-icon">🏆</span>
@@ -57,21 +95,23 @@
             <div class="stat-value" id="statMatches">0</div>
         </div>
     </div>
+
     <div class="button-grid">
-        <button class="btn btn-play" id="btnPlay">▶ Play</button>
-        <button class="btn btn-levels" id="btnLevels">📋 Levels</button>
-        <button class="btn btn-sound" id="btnSound">🔊 Sound</button>
-        <button class="btn btn-rules" id="btnRules">📖 Rules</button>
-        <button class="btn btn-reset" id="btnReset">🔄 Reset</button>
-        <button class="btn btn-exit" id="btnExit">✖ Exit</button>
+        <button class="btn btn-play" id="btnPlay">▶ PLAY</button>
+        <button class="btn btn-levels" id="btnLevels">📋 LEVELS</button>
+        <button class="btn btn-sound" id="btnSound">🔊 SOUND</button>
+        <button class="btn btn-rules" id="btnRules">📖 RULES</button>
+        <button class="btn btn-reset" id="btnReset">🔄 RESET</button>
+        <button class="btn btn-exit" id="btnExit">✖ EXIT</button>
     </div>
 </div>
 
+<!-- GAME SCREEN -->
 <div id="game-screen" class="screen">
     <div class="game-top">
         <button class="mini-btn orange" id="btnGameHome">⬅ HOME</button>
-        <div class="game-title">CARD MATCHING</div>
-        <button class="mini-btn" id="btnGameLevels">☰ LEVELS</button>
+        <div class="game-title">LEVEL <span id="levelBadge">1</span></div>
+        <div class="game-timer" id="timerDisplay">⏱️ 00:00</div>
     </div>
     <div class="hud">
         <div class="hud-item" id="hud-level">LVL: 1</div>
@@ -89,6 +129,7 @@
     </div>
 </div>
 
+<!-- DIALOG -->
 <div class="dialog-overlay" id="dialogOverlay">
     <div class="dialog" id="dialog">
         <div class="dialog-title" id="dialogTitle"></div>
@@ -99,6 +140,7 @@
     </div>
 </div>
 
+<!-- MODALS (Profile, Settings, Help, Terms) -->
 <div class="modal-overlay" id="profileModal">
     <div class="modal-box profile-box">
         <button class="modal-close" id="closeProfile">✖</button>
@@ -106,41 +148,10 @@
         <h2 class="profile-name" id="profileName">Player</h2>
         <p class="profile-type-badge" id="profileTypeBadge">📧 Email Account</p>
         <div class="profile-info-list">
-            <div class="profile-info-item">
-                <div class="profile-info-icon">👤</div>
-                <div class="profile-info-content">
-                    <div class="profile-info-label">Name</div>
-                    <div class="profile-info-value" id="profileInfoName">-</div>
-                </div>
-            </div>
-            <div class="profile-info-item">
-                <div class="profile-info-icon">📧</div>
-                <div class="profile-info-content">
-                    <div class="profile-info-label">Email / Mobile</div>
-                    <div class="profile-info-value" id="profileInfoIdentifier">-</div>
-                </div>
-            </div>
-            <div class="profile-info-item">
-                <div class="profile-info-icon">🔒</div>
-                <div class="profile-info-content">
-                    <div class="profile-info-label">Account Type</div>
-                    <div class="profile-info-value" id="profileInfoAccountType">-</div>
-                </div>
-            </div>
-            <div class="profile-info-item">
-                <div class="profile-info-icon">🕐</div>
-                <div class="profile-info-content">
-                    <div class="profile-info-label">Login Time</div>
-                    <div class="profile-info-value" id="profileInfoLoginTime">-</div>
-                </div>
-            </div>
-            <div class="profile-info-item">
-                <div class="profile-info-icon">✅</div>
-                <div class="profile-info-content">
-                    <div class="profile-info-label">Status</div>
-                    <div class="profile-info-value" id="profileInfoStatus">-</div>
-                </div>
-            </div>
+            <div class="profile-info-item"><div class="profile-info-icon">👤</div><div class="profile-info-content"><div class="profile-info-label">Name</div><div class="profile-info-value" id="profileInfoName">-</div></div></div>
+            <div class="profile-info-item"><div class="profile-info-icon">📧</div><div class="profile-info-content"><div class="profile-info-label">Email</div><div class="profile-info-value" id="profileInfoIdentifier">-</div></div></div>
+            <div class="profile-info-item"><div class="profile-info-icon">🕐</div><div class="profile-info-content"><div class="profile-info-label">Login Time</div><div class="profile-info-value" id="profileInfoLoginTime">-</div></div></div>
+            <div class="profile-info-item"><div class="profile-info-icon">✅</div><div class="profile-info-content"><div class="profile-info-label">Status</div><div class="profile-info-value" id="profileInfoStatus">-</div></div></div>
         </div>
     </div>
 </div>
@@ -150,30 +161,9 @@
         <button class="modal-close" id="closeSettings">✖</button>
         <h2 class="modal-title">⚙️ Settings</h2>
         <div class="settings-list">
-            <button class="settings-item" id="btnHelp">
-                <span class="settings-item-icon">❓</span>
-                <span class="settings-item-text">
-                    <strong>Help</strong>
-                    <small>How to play the game</small>
-                </span>
-                <span class="settings-item-arrow">›</span>
-            </button>
-            <button class="settings-item" id="btnTerms">
-                <span class="settings-item-icon">📜</span>
-                <span class="settings-item-text">
-                    <strong>Terms & Conditions</strong>
-                    <small>Game rules & privacy</small>
-                </span>
-                <span class="settings-item-arrow">›</span>
-            </button>
-            <button class="settings-item danger" id="btnLogout">
-                <span class="settings-item-icon">🚪</span>
-                <span class="settings-item-text">
-                    <strong>Logout</strong>
-                    <small>Sign out from this device</small>
-                </span>
-                <span class="settings-item-arrow">›</span>
-            </button>
+            <button class="settings-item" id="btnHelp"><span class="settings-item-icon">❓</span><span class="settings-item-text"><strong>Help</strong><small>How to play</small></span><span class="settings-item-arrow">›</span></button>
+            <button class="settings-item" id="btnTerms"><span class="settings-item-icon">📜</span><span class="settings-item-text"><strong>Terms & Privacy</strong><small>Rules and data</small></span><span class="settings-item-arrow">›</span></button>
+            <button class="settings-item danger" id="btnLogout"><span class="settings-item-icon">🚪</span><span class="settings-item-text"><strong>Logout</strong><small>Sign out</small></span><span class="settings-item-arrow">›</span></button>
         </div>
     </div>
 </div>
@@ -184,19 +174,7 @@
         <h2 class="modal-title">❓ Help</h2>
         <div class="info-content">
             <p><strong>🎮 How to Play:</strong></p>
-            <ul>
-                <li>Cards pe click karke flip karo</li>
-                <li>Same symbols ke 2 cards match karo</li>
-                <li>Sahi match → +100 points</li>
-                <li>Galat match → -25 points</li>
-                <li>Level complete karo aur aage badho</li>
-            </ul>
-            <p><strong>💡 Tips:</strong></p>
-            <ul>
-                <li>HINT button use karo (3 per level)</li>
-                <li>Yaad rakho cards ki positions</li>
-                <li>Level ke flips limit me raho</li>
-            </ul>
+            <ul><li>Cards pe click karke flip karo</li><li>Same symbols match karo</li><li>Sahi match → +100 points</li><li>Galat match → -25 points</li><li>Time khatam hone se pehle jeeto!</li></ul>
         </div>
     </div>
 </div>
@@ -204,31 +182,10 @@
 <div class="modal-overlay" id="termsModal">
     <div class="modal-box info-box">
         <button class="modal-close" id="closeTerms">✖</button>
-        <h2 class="modal-title">📜 Terms & Conditions</h2>
+        <h2 class="modal-title">📜 Terms & Privacy</h2>
         <div class="info-content">
-            <p><strong>🎯 Purpose:</strong></p>
-            <p>This game is designed only to improve your <strong>memory and mind power</strong>.</p>
-            <ul>
-                <li>🧠 Memory improvement</li>
-                <li>🎯 Focus and concentration</li>
-                <li>⚡ Quick thinking</li>
-                <li>👁️ Visual recognition</li>
-            </ul>
-            <p><strong>🔒 Privacy:</strong></p>
-            <ul>
-                <li>Your data is stored securely</li>
-                <li>Password is encrypted (bcrypt)</li>
-                <li>We don't share your data with anyone</li>
-            </ul>
-            <p><strong>📋 Usage:</strong></p>
-            <ul>
-                <li>Free to play forever</li>
-                <li>No ads, no hidden charges</li>
-                <li>Play responsibly</li>
-            </ul>
-            <p style="margin-top: 20px; text-align: center; color: #60a5fa;">
-                <em>Made with ❤️ for memory training</em>
-            </p>
+            <p><strong>🎯 Purpose:</strong> Memory improvement game.</p>
+            <p><strong>🔒 Privacy:</strong> Data securely stored.</p>
         </div>
     </div>
 </div>
@@ -236,5 +193,31 @@
 <script src="api.js"></script>
 <script src="pwa.js"></script>
 <script src="game.js"></script>
+<script>
+    // Install Popup Logic
+    setTimeout(function() {
+        var popup = document.getElementById('installPopup');
+        var installBtn = document.getElementById('btnInstallNow');
+        var laterBtn = document.getElementById('btnInstallLater');
+
+        if (window.matchMedia('(display-mode: standalone)').matches) {
+            popup.classList.remove('active');
+        }
+
+        laterBtn.addEventListener('click', function() { popup.classList.remove('active'); });
+
+        installBtn.addEventListener('click', function() {
+            if (window.deferredPrompt) {
+                window.deferredPrompt.prompt();
+                window.deferredPrompt.userChoice.then(function(choice) {
+                    if (choice.outcome === 'accepted') popup.classList.remove('active');
+                    window.deferredPrompt = null;
+                });
+            } else {
+                alert('Browser menu (⋮) → "Install App" use karo.');
+            }
+        });
+    }, 500);
+</script>
 </body>
 </html>
