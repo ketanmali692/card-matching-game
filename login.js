@@ -6,7 +6,6 @@ var forgotEmailValue = '';
 var forgotOtpValue = '';
 
 window.addEventListener('DOMContentLoaded', function() {
-    // ❌ AUTO-LOGIN HATA DIYA HAI
     setupPasswordToggles();
     setupButtons();
     setupInputs();
@@ -83,7 +82,7 @@ async function handleLogin() {
 
     var btn = document.getElementById('btnLogin');
     btn.disabled = true;
-    btn.querySelector('.btn-text').textContent = 'LOGGING IN... (Wait)';
+    btn.querySelector('.btn-text').textContent = 'LOGGING IN...';
 
     try {
         await window.AuthAPI.login(email, password);
@@ -91,7 +90,8 @@ async function handleLogin() {
         showSuccess('Login successful! Redirecting...');
 
         setTimeout(function() {
-            window.location.href = 'index.html';
+            // Login successful, go to splash
+            window.location.href = 'splash.html';
         }, 800);
 
     } catch (err) {
@@ -205,7 +205,7 @@ async function handleSendForgotOtp() {
 
     var btn = document.getElementById('btnSendForgotOtp');
     btn.disabled = true;
-    btn.querySelector('.btn-text').textContent = 'SENDING... (Wait)';
+    btn.querySelector('.btn-text').textContent = 'SENDING...';
 
     try {
         await window.AuthAPI.forgotPassword(forgotEmailValue);
@@ -257,7 +257,7 @@ async function handleVerifyForgotOtp() {
 async function handleResendForgotOtp() {
     var btn = document.getElementById('btnResendForgotOtp');
     var original = btn.textContent;
-    btn.textContent = 'Sending... (Wait)';
+    btn.textContent = 'Sending...';
     btn.disabled = true;
 
     try {
@@ -331,7 +331,7 @@ function showError(msg) {
     el.classList.remove('hidden');
     el.style.animation = 'none';
     setTimeout(function() { el.style.animation = 'shake 0.4s ease'; }, 10);
-    setTimeout(function() { el.classList.add('hidden'); }, 6000);
+    setTimeout(function() { el.classList.add('hidden'); }, 4000);
 }
 
 function showSuccess(msg) {

@@ -11,7 +11,6 @@ window.addEventListener('DOMContentLoaded', function() {
     setupOTPInputs();
 });
 
-// ---------- PASSWORD TOGGLES ----------
 function setupPasswordToggles() {
     var pwInput = document.getElementById('passwordInput');
     var pwToggle = document.getElementById('togglePassword');
@@ -40,7 +39,6 @@ function setupPasswordToggles() {
     cpwToggle.addEventListener('click', function() { toggle(cpwInput, cpwToggle, cpwIcon); });
 }
 
-// ---------- INPUTS ----------
 function setupInputs() {
     ['nameInput', 'emailInput', 'passwordInput', 'confirmPasswordInput'].forEach(function(id) {
         var el = document.getElementById(id);
@@ -51,7 +49,6 @@ function setupInputs() {
     });
 }
 
-// ---------- BUTTONS ----------
 function setupButtons() {
     document.getElementById('btnSignup').onclick = handleSignup;
     document.getElementById('btnVerifyOtp').onclick = verifyOTP;
@@ -59,7 +56,6 @@ function setupButtons() {
     document.getElementById('btnCloseOtp').onclick = closeOTPModal;
 }
 
-// ---------- SIGNUP HANDLER ----------
 async function handleSignup() {
     hideMessages();
 
@@ -90,7 +86,7 @@ async function handleSignup() {
 
     var btn = document.getElementById('btnSignup');
     btn.disabled = true;
-    btn.querySelector('.btn-text').textContent = 'SENDING... (Wait 1-2 min)';
+    btn.querySelector('.btn-text').textContent = 'SENDING OTP...';
 
     try {
         await window.AuthAPI.sendOTP(name, email, password);
@@ -104,7 +100,6 @@ async function handleSignup() {
     }
 }
 
-// ---------- OTP MODAL ----------
 function showOTPModal(email) {
     document.getElementById('otpSubtitle').textContent =
         'We\'ve sent a 6-digit OTP to ' + email;
@@ -123,7 +118,6 @@ function showOTPModal(email) {
     document.getElementById('otpError').classList.add('hidden');
 }
 
-// ---------- OTP INPUTS ----------
 function setupOTPInputs() {
     var boxes = document.querySelectorAll('.otp-box');
 
@@ -163,7 +157,6 @@ function setupOTPInputs() {
     });
 }
 
-// ---------- VERIFY OTP ----------
 async function verifyOTP() {
     var boxes = document.querySelectorAll('.otp-box');
     var entered = '';
@@ -186,7 +179,8 @@ async function verifyOTP() {
         showSuccess('Account created! Redirecting...');
 
         setTimeout(function() {
-            window.location.href = 'index.html';
+            // Account created, go to splash
+            window.location.href = 'splash.html';
         }, 1000);
 
     } catch (err) {
@@ -197,13 +191,12 @@ async function verifyOTP() {
     }
 }
 
-// ---------- RESEND OTP ----------
 async function resendOTP() {
     if (!pendingUserData) return;
 
     try {
         var btn = document.getElementById('btnResendOtp');
-        btn.textContent = 'Sending... (Wait 1-2 min)';
+        btn.textContent = 'Sending...';
         
         await window.AuthAPI.sendOTP(
             pendingUserData.name,
@@ -226,38 +219,4 @@ async function resendOTP() {
             btn.style.color = '';
         }, 3000);
 
-    } catch (err) {
-        alert('Failed to resend OTP: ' + err.message);
-    }
-}
-
-// ---------- CLOSE OTP MODAL ----------
-function closeOTPModal() {
-    document.getElementById('otpModal').classList.remove('active');
-    document.querySelectorAll('.otp-box').forEach(function(box) {
-        box.value = '';
-        box.classList.remove('filled');
-    });
-    document.getElementById('otpError').classList.add('hidden');
-}
-
-// ---------- MESSAGES ----------
-function showError(msg) {
-    var el = document.getElementById('errorMsg');
-    el.textContent = '⚠ ' + msg;
-    el.classList.remove('hidden');
-    el.style.animation = 'none';
-    setTimeout(function() { el.style.animation = 'shake 0.4s ease'; }, 10);
-    setTimeout(function() { el.classList.add('hidden'); }, 6000);
-}
-
-function showSuccess(msg) {
-    var el = document.getElementById('successMsg');
-    el.textContent = '✓ ' + msg;
-    el.classList.remove('hidden');
-}
-
-function hideMessages() {
-    document.getElementById('errorMsg').classList.add('hidden');
-    document.getElementById('successMsg').classList.add('hidden');
-}
+    } catch (err)

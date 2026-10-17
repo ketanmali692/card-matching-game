@@ -4,7 +4,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
     <meta name="theme-color" content="#0a0514">
-    <title>Card Matching Game</title>
+    <title>Download Card Matching Game</title>
 
     <!-- PWA -->
     <link rel="manifest" href="manifest.json">
@@ -18,7 +18,7 @@
 
     <link rel="stylesheet" href="style.css">
     <style>
-        /* ---------- DOWNLOAD SCREEN STYLE ---------- */
+        /* Download Screen Style */
         #downloadScreen {
             position: fixed; inset: 0; z-index: 99999;
             background: radial-gradient(circle at 50% 40%, #2d1b4e 0%, #0a0514 60%, #050208 100%);
@@ -59,33 +59,11 @@
         }
         .dl-skip:hover { color: #f87171; }
         .dl-note { font-size: 11px; color: #8aa2bf; margin-top: 20px; max-width: 300px; line-height: 1.5; }
-
-        /* ---------- SPLASH STYLE ---------- */
-        #splash {
-            position: fixed; inset: 0; z-index: 9999;
-            background: radial-gradient(circle at 50% 50%, #2d1b4e 0%, #0a0514 50%, #050208 100%);
-            display: none; flex-direction: column; align-items: center; justify-content: center;
-            padding: 20px;
-        }
-        #splash.active { display: flex !important; }
-        .splash-title {
-            font-size: clamp(24px, 7vw, 42px); font-weight: 900; color: #a855f7;
-            text-align: center; letter-spacing: 2px;
-            text-shadow: 0 0 30px rgba(168, 85, 247, 0.8);
-            margin-bottom: 10px; animation: splashPulse 2s infinite;
-        }
-        @keyframes splashPulse {
-            0%, 100% { text-shadow: 0 0 30px rgba(168, 85, 247, 0.8); }
-            50% { text-shadow: 0 0 50px rgba(168, 85, 247, 1); }
-        }
-        .splash-sub { font-size: clamp(12px, 3vw, 16px); color: #4ade80; font-style: italic; margin-bottom: 50px; letter-spacing: 1px; }
-        .progress-bar { width: 400px; max-width: 80vw; height: 20px; background: #1a0d2e; border: 2px solid #a855f7; border-radius: 15px; padding: 3px; position: relative; }
-        .progress-fill { height: 100%; width: 0%; background: linear-gradient(90deg, #a855f7 0%, #4ade80 100%); border-radius: 12px; transition: width 0.1s linear; }
     </style>
 </head>
 <body>
 
-<!-- 1. DOWNLOAD SCREEN (Sabse pehle ye dikhega) -->
+<!-- DOWNLOAD SCREEN -->
 <div id="downloadScreen">
     <div class="dl-icon">🎮</div>
     <h1 class="dl-title">Card Matching Game</h1>
@@ -104,138 +82,15 @@
     <p class="dl-note">Note: This will add the game to your home screen (like an app).</p>
 </div>
 
-<!-- 2. SPLASH SCREEN (Login ke baad 5 second dikhega) -->
-<div id="splash">
-    <div class="splash-title">LOADING...</div>
-    <div class="splash-sub">★ 3D MEMORY CHALLENGE ★</div>
-    <div class="progress-bar"><div class="progress-fill" id="progressFill"></div></div>
-</div>
-
-<!-- 3. HOME SCREEN -->
-<div id="home" class="screen">
-    <div class="home-top-bar">
-        <button class="top-icon-btn" id="btnSettings">⚙️</button>
-        <button class="top-icon-btn" id="btnProfile">👤</button>
-    </div>
-    <div class="home-title">CARD MATCHING</div>
-    <div class="home-sub">★ 3D MEMORY CHALLENGE ★</div>
-    
-    <div class="stats-row">
-        <div class="stat-card gold"><span class="stat-icon">🏆</span><div class="stat-label">Best Level</div><div class="stat-value" id="statBestLevel">1</div></div>
-        <div class="stat-card"><span class="stat-icon">⭐</span><div class="stat-label">Best Score</div><div class="stat-value" id="statBestScore">0</div></div>
-        <div class="stat-card cyan"><span class="stat-icon">🎯</span><div class="stat-label">Matches</div><div class="stat-value" id="statMatches">0</div></div>
-    </div>
-
-    <div class="button-grid">
-        <button class="btn btn-play" id="btnPlay">▶ PLAY</button>
-        <button class="btn btn-levels" id="btnLevels">📋 LEVELS</button>
-        <button class="btn btn-sound" id="btnSound">🔊 SOUND</button>
-        <button class="btn btn-rules" id="btnRules">📖 RULES</button>
-        <button class="btn btn-reset" id="btnReset">🔄 RESET</button>
-        <button class="btn btn-exit" id="btnExit">✖ EXIT</button>
-    </div>
-</div>
-
-<!-- 4. GAME SCREEN -->
-<div id="game-screen" class="screen">
-    <div class="game-top">
-        <button class="mini-btn orange" id="btnGameHome">⬅ HOME</button>
-        <div class="game-title">LEVEL <span id="levelBadge">1</span></div>
-        <div class="game-timer" id="timerDisplay">⏱️ 00:00</div>
-    </div>
-    <div class="hud">
-        <div class="hud-item" id="hud-level">LVL: 1</div>
-        <div class="hud-item" id="hud-flips">FLIPS: 0/12</div>
-        <div class="hud-item" id="hud-score">SCORE: 0</div>
-        <div class="hud-item" id="hud-hints">HINTS: 3/3</div>
-        <div class="hud-item" id="hud-status">READY</div>
-    </div>
-    <div class="card-grid" id="cardGrid"></div>
-    <div class="game-bottom">
-        <button class="mini-btn" id="btnHint">💡 HINT</button>
-        <button class="mini-btn" id="btnPause">⏸ PAUSE</button>
-        <button class="mini-btn" id="btnRestart">🔄 RESTART</button>
-        <button class="mini-btn" id="btnGameRules">📖 RULES</button>
-    </div>
-</div>
-
-<!-- DIALOGS -->
-<div class="dialog-overlay" id="dialogOverlay">
-    <div class="dialog" id="dialog">
-        <div class="dialog-title" id="dialogTitle"></div>
-        <div class="dialog-sub" id="dialogSub"></div>
-        <div class="dialog-score" id="dialogScore"></div>
-        <div class="dialog-next" id="dialogNext"></div>
-        <div class="dialog-buttons" id="dialogButtons"></div>
-    </div>
-</div>
-
-<!-- MODALS -->
-<div class="modal-overlay" id="profileModal">
-    <div class="modal-box profile-box">
-        <button class="modal-close" id="closeProfile">✖</button>
-        <div class="profile-avatar">👤</div>
-        <h2 class="profile-name" id="profileName">Player</h2>
-        <p class="profile-type-badge" id="profileTypeBadge">📧 Email Account</p>
-        <div class="profile-info-list">
-            <div class="profile-info-item"><div class="profile-info-icon">👤</div><div class="profile-info-content"><div class="profile-info-label">Name</div><div class="profile-info-value" id="profileInfoName">-</div></div></div>
-            <div class="profile-info-item"><div class="profile-info-icon">📧</div><div class="profile-info-content"><div class="profile-info-label">Email</div><div class="profile-info-value" id="profileInfoIdentifier">-</div></div></div>
-            <div class="profile-info-item"><div class="profile-info-icon">✅</div><div class="profile-info-content"><div class="profile-info-label">Status</div><div class="profile-info-value" id="profileInfoStatus">-</div></div></div>
-        </div>
-    </div>
-</div>
-
-<div class="modal-overlay" id="settingsModal">
-    <div class="modal-box settings-box">
-        <button class="modal-close" id="closeSettings">✖</button>
-        <h2 class="modal-title">⚙️ Settings</h2>
-        <div class="settings-list">
-            <button class="settings-item" id="btnHelp"><span class="settings-item-icon">❓</span><span class="settings-item-text"><strong>Help</strong><small>How to play</small></span></button>
-            <button class="settings-item" id="btnTerms"><span class="settings-item-icon">📜</span><span class="settings-item-text"><strong>Terms</strong><small>Rules and privacy</small></span></button>
-            <button class="settings-item danger" id="btnLogout"><span class="settings-item-icon">🚪</span><span class="settings-item-text"><strong>Logout</strong><small>Sign out</small></span></button>
-        </div>
-    </div>
-</div>
-
-<div class="modal-overlay" id="helpModal">
-    <div class="modal-box info-box">
-        <button class="modal-close" id="closeHelp">✖</button>
-        <h2 class="modal-title">❓ Help</h2>
-        <div class="info-content">
-            <p><strong>🎮 How to Play:</strong></p>
-            <ul><li>Cards pe click karke flip karo</li><li>Same symbols match karo</li><li>Sahi match → +100 points</li><li>Galat match → -25 points</li><li>Time khatam hone se pehle jeeto!</li></ul>
-        </div>
-    </div>
-</div>
-
-<div class="modal-overlay" id="termsModal">
-    <div class="modal-box info-box">
-        <button class="modal-close" id="closeTerms">✖</button>
-        <h2 class="modal-title">📜 Terms</h2>
-        <div class="info-content">
-            <p><strong>🔒 Privacy:</strong> Data securely stored.</p>
-        </div>
-    </div>
-</div>
-
-<script src="api.js"></script>
 <script src="pwa.js"></script>
-<script src="game.js"></script>
 <script>
     document.addEventListener('DOMContentLoaded', function() {
-        var downloadScreen = document.getElementById('downloadScreen');
-        var splash = document.getElementById('splash');
         var installBtn = document.getElementById('dlInstallBtn');
         var skipBtn = document.getElementById('dlSkipBtn');
 
-        // CHECK: Agar user already installed hai, to download screen skip karo
+        // Agar user already installed hai, to direct Login page pe bhej do
         if (localStorage.getItem('card_matching_installed') === 'true') {
-            downloadScreen.style.display = 'none';
-            if (!localStorage.getItem('card_matching_token')) {
-                window.location.href = 'login.html';
-            } else {
-                showSplash();
-            }
+            window.location.href = 'login.html';
         }
 
         // INSTALL BUTTON
@@ -245,15 +100,12 @@
                 window.deferredPrompt.userChoice.then(function(choice) {
                     if (choice.outcome === 'accepted') {
                         localStorage.setItem('card_matching_installed', 'true');
-                        downloadScreen.style.display = 'none';
                         window.location.href = 'login.html';
                     }
                     window.deferredPrompt = null;
                 });
             } else {
-                // Fallback: Agar prompt nahi, to direct login
                 localStorage.setItem('card_matching_installed', 'true');
-                downloadScreen.style.display = 'none';
                 window.location.href = 'login.html';
             }
         });
@@ -261,29 +113,8 @@
         // SKIP BUTTON
         skipBtn.addEventListener('click', function() {
             localStorage.setItem('card_matching_installed', 'true');
-            downloadScreen.style.display = 'none';
             window.location.href = 'login.html';
         });
-
-        // SPLASH LOGIC (5 seconds)
-        function showSplash() {
-            splash.classList.add('active');
-            var progress = 0;
-            var fill = document.getElementById('progressFill');
-            var interval = setInterval(function() {
-                progress += 2;
-                if (progress > 100) progress = 100;
-                fill.style.width = progress + '%';
-                if (progress >= 100) {
-                    clearInterval(interval);
-                    setTimeout(function() {
-                        splash.classList.remove('active');
-                        document.getElementById('home').classList.add('active');
-                        if (typeof renderHome === 'function') renderHome();
-                    }, 500);
-                }
-            }, 100); // 100 * 50ms = 5 seconds
-        }
     });
 </script>
 </body>
