@@ -90,7 +90,8 @@ async function handleLogin() {
         showSuccess('Login successful! Redirecting...');
 
         setTimeout(function() {
-            window.location.href = 'splash.html';
+            // ✅ Seedha Home page (index.html) pe bhejo
+            window.location.href = 'index.html';
         }, 800);
 
     } catch (err) {
