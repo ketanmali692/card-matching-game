@@ -115,6 +115,16 @@
             window.location.href = 'login.html';
         });
     });
+
+    // ✅ TEMPORARY: Service Worker ko unregister karo taaki naya code load ho
+    if ('serviceWorker' in navigator) {
+        navigator.serviceWorker.getRegistrations().then(function(registrations) {
+            for (let registration of registrations) {
+                registration.unregister();
+                console.log('Service Worker unregistered');
+            }
+        });
+    }
 </script>
 </body>
 </html>
