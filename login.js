@@ -86,12 +86,11 @@ async function handleLogin() {
 
     try {
         await window.AuthAPI.login(email, password);
-
         showSuccess('Login successful! Redirecting...');
 
         setTimeout(function() {
-            // ✅ Seedha Home page (index.html) pe bhejo
-            window.location.href = 'index.html';
+            // ✅ 5 second Splash pe bhejo
+            window.location.href = 'splash.html';
         }, 800);
 
     } catch (err) {
@@ -207,7 +206,6 @@ async function handleSendForgotOtp() {
     btn.disabled = true;
     btn.querySelector('.btn-text').textContent = 'SENDING OTP...';
 
-    // ✅ TURANT OTP SCREEN DIKHAO
     document.getElementById('forgotOtpSubtitle').textContent = "Enter the 6-digit OTP sent to " + forgotEmailValue;
     document.getElementById('forgotStep1').style.display = 'none';
     document.getElementById('forgotStep2').style.display = 'block';
