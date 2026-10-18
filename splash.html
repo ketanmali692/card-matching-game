@@ -3,28 +3,41 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="theme-color" content="#0b1130">
     <title>Loading...</title>
     <link rel="stylesheet" href="style.css">
     <style>
         #splash {
             position: fixed; inset: 0;
-            background: radial-gradient(circle at 50% 50%, #2d1b4e 0%, #0a0514 50%, #050208 100%);
+            background:
+                repeating-linear-gradient(45deg, rgba(255,255,255,.025) 0 14px, transparent 14px 28px),
+                radial-gradient(circle at 50% 40%, #2c3f9a 0%, #121b4a 50%, #070b1c 100%);
             display: flex; flex-direction: column; align-items: center; justify-content: center;
             padding: 20px; z-index: 9999;
         }
         .splash-title {
-            font-size: clamp(24px, 7vw, 42px); font-weight: 900; color: #a855f7;
-            text-align: center; letter-spacing: 2px;
-            text-shadow: 0 0 30px rgba(168, 85, 247, 0.8);
-            margin-bottom: 10px; animation: splashPulse 2s infinite;
+            font-size: clamp(26px, 7.5vw, 44px); font-weight: 900; text-align: center; letter-spacing: 3px; margin-bottom: 10px;
+            background: linear-gradient(180deg, #fff6c2 0%, #ffd24a 45%, #e8920b 100%);
+            -webkit-background-clip: text; background-clip: text; -webkit-text-fill-color: transparent;
+            -webkit-text-stroke: 1.2px #7a4a00;
+            filter: drop-shadow(0 4px 0 #5a3500) drop-shadow(0 10px 14px rgba(0,0,0,.55));
+            animation: splashPulse 2s infinite;
         }
         @keyframes splashPulse {
-            0%, 100% { text-shadow: 0 0 30px rgba(168, 85, 247, 0.8); }
-            50% { text-shadow: 0 0 50px rgba(168, 85, 247, 1); }
+            0%, 100% { transform: scale(1); }
+            50% { transform: scale(1.04); }
         }
-        .splash-sub { font-size: clamp(12px, 3vw, 16px); color: #4ade80; font-style: italic; margin-bottom: 50px; letter-spacing: 1px; }
-        .progress-bar { width: 400px; max-width: 80vw; height: 20px; background: #1a0d2e; border: 2px solid #a855f7; border-radius: 15px; padding: 3px; position: relative; }
-        .progress-fill { height: 100%; width: 0%; background: linear-gradient(90deg, #a855f7 0%, #4ade80 100%); border-radius: 12px; transition: width 0.1s linear; }
+        .splash-sub { font-size: clamp(12px, 3vw, 16px); color: #5eead4; font-weight: 700; margin-bottom: 50px; letter-spacing: 2px; }
+        .progress-bar {
+            width: 400px; max-width: 80vw; height: 22px; padding: 3px; position: relative;
+            background: #0b1130; border: 2px solid #ffd24a; border-radius: 15px;
+            box-shadow: 0 4px 0 #8a5200, 0 0 18px rgba(255,210,74,.35), inset 0 2px 4px rgba(0,0,0,.6);
+        }
+        .progress-fill {
+            height: 100%; width: 0%; border-radius: 12px; transition: width 0.1s linear;
+            background: linear-gradient(180deg, #ffe27a 0%, #f0a014 100%);
+            box-shadow: inset 0 2px 0 rgba(255,255,255,.5);
+        }
     </style>
 </head>
 <body>

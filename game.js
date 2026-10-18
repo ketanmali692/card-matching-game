@@ -8,6 +8,8 @@ var MATCH_POINTS = 100;
 var WRONG_PENALTY = 25;
 var USER_KEY = 'card_matching_user_v1';
 
+var WRONG_FLIP_BACK_MS = 550;   // ✅ galat pair kitni der dikhe, phir wapas flip (pehle 800)
+
 var timerInterval = null;
 var timeLeft = 0;
 
@@ -33,23 +35,79 @@ var state = {
     cardValues: [], cards: [], soundOn: true
 };
 
+// ============================================================
+//  SOUND (WebAudio)
+// ============================================================
 var audioContext = null;
-function initAudio() { if (!audioContext) { try { audioContext = new (window.AudioContext || window.webkitAudioContext)(); } catch (e) {} } }
+function initAudio() {
+    if (!audioContext) {
+        try { audioContext = new (window.AudioContext || window.webkitAudioContext)(); } catch (e) {}
+    }
+    if (audioContext && audioContext.state === 'suspended') {
+        try { audioContext.resume(); } catch (e) {}
+    }
+}
 
+function canPlaySound() {
+    if (!state.soundOn || !audioContext) return false;
+    if (audioContext.state === 'suspended') {
+        try { audioContext.resume(); } catch (e) {}
+    }
+    return true;
+}
+
+// Ek note bajata hai (freq, shuru hone ka time, lambai, wave type, volume, end freq)
+function tone(freq, start, dur, type, vol, endFreq) {
+    var osc = audioContext.createOscillator();
+    var gain = audioContext.createGain();
+    osc.type = type || 'sine';
+    osc.frequency.setValueAtTime(freq, start);
+    if (endFreq) osc.frequency.exponentialRampToValueAtTime(endFreq, start + dur);
+    gain.gain.setValueAtTime(0.0001, start);
+    gain.gain.exponentialRampToValueAtTime(vol, start + 0.008);
+    gain.gain.exponentialRampToValueAtTime(0.0001, start + dur);
+    osc.connect(gain);
+    gain.connect(audioContext.destination);
+    osc.start(start);
+    osc.stop(start + dur + 0.05);
+}
+
+// ✅ MATCH: chamakdar "ting-ting-ting" bell wali sparkle arpeggio
 function playMatchSound() {
-    if (!state.soundOn || !audioContext) return;
-    var notes = [1046.50, 1318.51, 1567.98];
-    var startTime = audioContext.currentTime;
-    notes.forEach(function(freq, i) {
-        var osc = audioContext.createOscillator();
-        var gain = audioContext.createGain();
-        osc.type = 'sine'; osc.frequency.value = freq;
-        var t = startTime + i * 0.09;
-        gain.gain.setValueAtTime(0, t);
-        gain.gain.linearRampToValueAtTime(0.3, t + 0.005);
-        gain.gain.exponentialRampToValueAtTime(0.001, t + 0.45);
-        osc.connect(gain); gain.connect(audioContext.destination);
-        osc.start(t); osc.stop(t + 0.5);
+    if (!canPlaySound()) return;
+    var t = audioContext.currentTime;
+    var notes = [[1046.5, 0], [1318.5, 0.07], [1568.0, 0.14], [2093.0, 0.21]];
+    notes.forEach(function(n) {
+        tone(n[0], t + n[1], 0.55, 'sine', 0.22);
+        tone(n[0] * 2, t + n[1], 0.35, 'sine', 0.06);
+        tone(n[0] * 3, t + n[1], 0.2, 'sine', 0.025);
+    });
+}
+
+// Galat pair: halki si neeche girti "uh-oh" awaaz
+function playWrongSound() {
+    if (!canPlaySound()) return;
+    var t = audioContext.currentTime;
+    tone(196, t, 0.18, 'triangle', 0.18, 130);
+    tone(147, t + 0.12, 0.22, 'triangle', 0.16, 98);
+}
+
+// Card palatne ki chhoti si tick awaaz
+function playFlipSound() {
+    if (!canPlaySound()) return;
+    var t = audioContext.currentTime;
+    tone(700, t, 0.05, 'sine', 0.1, 350);
+}
+
+// Level jeetne par chhota fanfare
+function playWinSound() {
+    if (!canPlaySound()) return;
+    var t = audioContext.currentTime;
+    var notes = [523.25, 659.25, 783.99, 1046.5, 1318.5];
+    notes.forEach(function(f, i) {
+        var d = (i === notes.length - 1) ? 0.9 : 0.3;
+        tone(f, t + i * 0.11, d, 'triangle', 0.2);
+        tone(f * 2, t + i * 0.11, d * 0.6, 'sine', 0.05);
     });
 }
 
@@ -115,6 +173,11 @@ function stopTimer() { clearInterval(timerInterval); }
 
 function startGame(level) {
     initAudio();
+
+    // ✅ LEVEL LOCK: jo level abhi unlock nahi hua use kholne hi mat do
+    if (level > state.unlockedLevel) level = state.unlockedLevel;
+    if (level < 1) level = 1;
+
     state.currentLevel = level;
     configureLevel(level);
     state.firstCard = null; state.secondCard = null; state.flipsUsed = 0;
@@ -124,7 +187,7 @@ function startGame(level) {
     updateHUD();
     renderCards();
     showScreen('game-screen');
-    
+
     var levelTime = 40 + (level - 1) * 10;
     startTimer(levelTime);
     $('levelBadge').textContent = level;
@@ -161,8 +224,9 @@ function renderCards() {
     });
 }
 
+// ✅ Gehre (dark) rang, taaki safed/cream card par saaf dikhein
 function getColor(idx) {
-    var colors = ['#c084fc', '#f87171', '#4ade80', '#facc15', '#38bdf8', '#fb923c', '#f472b6', '#a855f7'];
+    var colors = ['#e63946', '#1d4ed8', '#15803d', '#d97706', '#7c3aed', '#0e7490', '#be185d', '#c2410c'];
     return colors[idx % colors.length];
 }
 
@@ -179,6 +243,7 @@ function handleCardClick(index) {
     if (!card || card.matched || card.revealed) return;
     if (state.firstCard === index) return;
     card.revealed = true; card.el.classList.add('flipped');
+    playFlipSound();
     if (state.firstCard === null) { state.firstCard = index; setStatus('CHOOSE SECOND CARD'); return; }
     state.secondCard = index; state.flipsUsed++; updateHUD(); checkMatch();
 }
@@ -192,10 +257,11 @@ function checkMatch() {
         state.cards[a].el.classList.add('matched'); state.cards[b].el.classList.add('matched');
         playMatchSound(); updateHUD(); setStatus('MATCH! +' + MATCH_POINTS);
         state.firstCard = null; state.secondCard = null;
-        if (state.matchedPairs === state.pairs) setTimeout(finishLevel, 600);
+        if (state.matchedPairs === state.pairs) setTimeout(finishLevel, 650);
     } else {
         state.score = Math.max(0, state.score - WRONG_PENALTY);
         state.cards[a].el.classList.add('wrong'); state.cards[b].el.classList.add('wrong');
+        playWrongSound();
         updateHUD(); setStatus('WRONG PAIR'); state.waiting = true;
         setTimeout(function() {
             state.cards[a].el.classList.remove('wrong', 'flipped'); state.cards[b].el.classList.remove('wrong', 'flipped');
@@ -203,7 +269,7 @@ function checkMatch() {
             state.firstCard = null; state.secondCard = null; state.waiting = false;
             if (state.flipsUsed >= state.flipsAllowed && state.matchedPairs < state.pairs) levelFailed(false);
             else setStatus('TRY AGAIN');
-        }, 800);
+        }, WRONG_FLIP_BACK_MS);
     }
 }
 
@@ -241,6 +307,7 @@ function useHint() {
 
 function finishLevel() {
     state.gameOver = true; stopTimer();
+    playWinSound();
     var prev = state.levelBestScores[state.currentLevel] || 0;
     if (state.score > prev) state.levelBestScores[state.currentLevel] = state.score;
     if (!state.completedLevels.has(state.currentLevel)) { state.totalScore += state.score; state.completedLevels.add(state.currentLevel); }
