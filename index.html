@@ -4,127 +4,13 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
     <meta name="theme-color" content="#0a0514">
-    <title>Download Card Matching Game</title>
-
-    <!-- PWA -->
-    <link rel="manifest" href="manifest.json">
-    <link rel="icon" type="image/png" href="icons/icon-192x192.png">
-    <link rel="apple-touch-icon" href="icons/icon-192x192.png">
-    <meta name="apple-mobile-web-app-capable" content="yes">
-    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
-    <meta name="apple-mobile-web-app-title" content="CardMatch">
-    <meta name="mobile-web-app-capable" content="yes">
-    <meta name="application-name" content="CardMatch">
-
-    <link rel="stylesheet" href="style.css">
-    <style>
-        /* Download Screen Style */
-        #downloadScreen {
-            position: fixed; inset: 0; z-index: 99999;
-            background: radial-gradient(circle at 50% 40%, #2d1b4e 0%, #0a0514 60%, #050208 100%);
-            display: flex; flex-direction: column; align-items: center; justify-content: center;
-            padding: 30px; text-align: center; color: white;
-        }
-        .dl-icon {
-            width: 130px; height: 130px;
-            background: linear-gradient(135deg, #a855f7, #7e22ce);
-            border-radius: 32px; display: flex; align-items: center; justify-content: center;
-            font-size: 60px; margin-bottom: 25px;
-            box-shadow: 0 10px 30px rgba(168, 85, 247, 0.6);
-            animation: floatIcon 3s ease-in-out infinite;
-        }
-        @keyframes floatIcon { 0%, 100% { transform: translateY(0); } 50% { transform: translateY(-15px); } }
-        .dl-title { font-size: 28px; font-weight: 900; color: #f0f5ff; margin-bottom: 8px; letter-spacing: 1px; }
-        .dl-sub { font-size: 15px; color: #a855f7; margin-bottom: 25px; font-weight: 600; letter-spacing: 1px; }
-        .dl-features {
-            background: rgba(255,255,255,0.05); border: 1px solid rgba(168, 85, 247, 0.3);
-            border-radius: 15px; padding: 20px; width: 100%; max-width: 340px;
-            margin-bottom: 25px; text-align: left;
-        }
-        .dl-feature-item { display: flex; align-items: center; gap: 10px; margin-bottom: 12px; color: #d0dae8; font-size: 14px; }
-        .dl-feature-item:last-child { margin-bottom: 0; }
-        .dl-feature-item span { color: #4ade80; font-size: 18px; }
-        .dl-btn {
-            width: 100%; max-width: 340px; padding: 18px;
-            background: linear-gradient(180deg, #4ade80, #16a34a);
-            border: none; border-radius: 18px; color: white;
-            font-size: 20px; font-weight: 900; letter-spacing: 2px;
-            cursor: pointer; box-shadow: 0 8px 0 #0a1428, 0 12px 25px rgba(74, 222, 128, 0.5);
-            transition: all 0.15s; font-family: inherit; margin-bottom: 15px;
-        }
-        .dl-btn:active { transform: translateY(6px); box-shadow: 0 2px 0 #0a1428; }
-        .dl-skip {
-            color: #8aa2bf; font-size: 14px; text-decoration: underline;
-            cursor: pointer; padding: 10px; transition: color 0.2s;
-        }
-        .dl-skip:hover { color: #f87171; }
-        .dl-note { font-size: 11px; color: #8aa2bf; margin-top: 20px; max-width: 300px; line-height: 1.5; }
-    </style>
+    <title>Card Matching Game</title>
+    <script>
+        // ✅ Seedha Login page pe bhej do (Install page hata diya)
+        window.location.href = 'login.html';
+    </script>
 </head>
 <body>
-
-<div id="downloadScreen">
-    <div class="dl-icon">🎮</div>
-    <h1 class="dl-title">Card Matching Game</h1>
-    <p class="dl-sub">★ 3D MEMORY CHALLENGE ★</p>
-
-    <div class="dl-features">
-        <div class="dl-feature-item"><span>✔</span> Full-screen 3D Gaming</div>
-        <div class="dl-feature-item"><span>✔</span> Play offline anytime</div>
-        <div class="dl-feature-item"><span>✔</span> Beat the timer & level up</div>
-        <div class="dl-feature-item"><span>✔</span> Install as a native app</div>
-    </div>
-
-    <button id="dlInstallBtn" class="dl-btn">⬇ INSTALL GAME</button>
-    <div id="dlSkipBtn" class="dl-skip">Skip & Play in Browser</div>
-
-    <p class="dl-note">Note: This will add the game to your home screen (like an app).</p>
-</div>
-
-<script src="pwa.js"></script>
-<script>
-    document.addEventListener('DOMContentLoaded', function() {
-        var installBtn = document.getElementById('dlInstallBtn');
-        var skipBtn = document.getElementById('dlSkipBtn');
-
-        // Agar user pehle se install kar chuka hai, to direct login pe bhej do
-        if (localStorage.getItem('card_matching_installed') === 'true') {
-            window.location.href = 'login.html';
-        }
-
-        // INSTALL BUTTON
-        installBtn.addEventListener('click', function() {
-            if (window.deferredPrompt) {
-                window.deferredPrompt.prompt();
-                window.deferredPrompt.userChoice.then(function(choice) {
-                    if (choice.outcome === 'accepted') {
-                        localStorage.setItem('card_matching_installed', 'true');
-                        window.location.href = 'login.html';
-                    }
-                    window.deferredPrompt = null;
-                });
-            } else {
-                localStorage.setItem('card_matching_installed', 'true');
-                window.location.href = 'login.html';
-            }
-        });
-
-        // SKIP BUTTON
-        skipBtn.addEventListener('click', function() {
-            localStorage.setItem('card_matching_installed', 'true');
-            window.location.href = 'login.html';
-        });
-    });
-
-    // ✅ TEMPORARY: Service Worker ko unregister karo taaki naya code load ho
-    if ('serviceWorker' in navigator) {
-        navigator.serviceWorker.getRegistrations().then(function(registrations) {
-            for (let registration of registrations) {
-                registration.unregister();
-                console.log('Service Worker unregistered');
-            }
-        });
-    }
-</script>
+    <p style="color: white; text-align: center; margin-top: 50px;">Loading...</p>
 </body>
 </html>
