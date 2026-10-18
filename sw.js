@@ -1,8 +1,10 @@
 // ============================================================
 //  SERVICE WORKER - Card Matching Game PWA
+//  ✅ Network-first: hamesha naya code pehle laayega,
+//     internet na ho tabhi purani cache wali file dikhayega.
 // ============================================================
 
-var CACHE_NAME = 'card-matching-v9';
+var CACHE_NAME = 'card-matching-v10';   // ✅ Jab bhi code badlo, ye number badhao (v11, v12...)
 
 var STATIC_ASSETS = [
     './',
@@ -44,6 +46,7 @@ self.addEventListener('fetch', function(event) {
     var req = event.request;
     if (req.method !== 'GET') return;
 
+    // API calls: hamesha network se, cache nahi
     if (req.url.indexOf('/api/') !== -1) {
         event.respondWith(fetch(req).catch(function() {
             return new Response(JSON.stringify({ error: 'Offline' }), { headers: { 'Content-Type': 'application/json' } });
@@ -51,15 +54,17 @@ self.addEventListener('fetch', function(event) {
         return;
     }
 
+    // Baaki files: pehle network, fail ho to cache
     event.respondWith(
-        caches.match(req).then(function(cached) {
-            if (cached) return cached;
-            return fetch(req).then(function(response) {
-                if (!response || response.status !== 200 || response.type === 'opaque') return response;
+        fetch(req).then(function(response) {
+            if (response && response.status === 200 && response.type !== 'opaque') {
                 var responseClone = response.clone();
                 caches.open(CACHE_NAME).then(function(cache) { cache.put(req, responseClone); });
-                return response;
-            }).catch(function() {
+            }
+            return response;
+        }).catch(function() {
+            return caches.match(req).then(function(cached) {
+                if (cached) return cached;
                 if (req.mode === 'navigate') return caches.match('./login.html');
             });
         })

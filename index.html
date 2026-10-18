@@ -1,4 +1,4 @@
-<!DOCTYPE html>
+\<!DOCTYPE html>
 <html lang="en">
 <head>
     <meta charset="UTF-8">
@@ -17,112 +17,214 @@
     <meta name="application-name" content="CardMatch">
 
     <link rel="stylesheet" href="style.css">
-    <style>
-        /* Download Screen Style */
-        #downloadScreen {
-            position: fixed; inset: 0; z-index: 99999;
-            background: radial-gradient(circle at 50% 40%, #2d1b4e 0%, #0a0514 60%, #050208 100%);
-            display: flex; flex-direction: column; align-items: center; justify-content: center;
-            padding: 30px; text-align: center; color: white;
-        }
-        .dl-icon {
-            width: 130px; height: 130px;
-            background: linear-gradient(135deg, #a855f7, #7e22ce);
-            border-radius: 32px; display: flex; align-items: center; justify-content: center;
-            font-size: 60px; margin-bottom: 25px;
-            box-shadow: 0 10px 30px rgba(168, 85, 247, 0.6);
-            animation: floatIcon 3s ease-in-out infinite;
-        }
-        @keyframes floatIcon { 0%, 100% { transform: translateY(0); } 50% { transform: translateY(-15px); } }
-        .dl-title { font-size: 28px; font-weight: 900; color: #f0f5ff; margin-bottom: 8px; letter-spacing: 1px; }
-        .dl-sub { font-size: 15px; color: #a855f7; margin-bottom: 25px; font-weight: 600; letter-spacing: 1px; }
-        .dl-features {
-            background: rgba(255,255,255,0.05); border: 1px solid rgba(168, 85, 247, 0.3);
-            border-radius: 15px; padding: 20px; width: 100%; max-width: 340px;
-            margin-bottom: 25px; text-align: left;
-        }
-        .dl-feature-item { display: flex; align-items: center; gap: 10px; margin-bottom: 12px; color: #d0dae8; font-size: 14px; }
-        .dl-feature-item:last-child { margin-bottom: 0; }
-        .dl-feature-item span { color: #4ade80; font-size: 18px; }
-        .dl-btn {
-            width: 100%; max-width: 340px; padding: 18px;
-            background: linear-gradient(180deg, #4ade80, #16a34a);
-            border: none; border-radius: 18px; color: white;
-            font-size: 20px; font-weight: 900; letter-spacing: 2px;
-            cursor: pointer; box-shadow: 0 8px 0 #0a1428, 0 12px 25px rgba(74, 222, 128, 0.5);
-            transition: all 0.15s; font-family: inherit; margin-bottom: 15px;
-        }
-        .dl-btn:active { transform: translateY(6px); box-shadow: 0 2px 0 #0a1428; }
-        .dl-skip {
-            color: #8aa2bf; font-size: 14px; text-decoration: underline;
-            cursor: pointer; padding: 10px; transition: color 0.2s;
-        }
-        .dl-skip:hover { color: #f87171; }
-        .dl-note { font-size: 11px; color: #8aa2bf; margin-top: 20px; max-width: 300px; line-height: 1.5; }
-    </style>
+
+    <!-- ✅ Login check: token nahi hai to login page par bhejo -->
+    <script>
+        (function() {
+            try {
+                if (!localStorage.getItem('card_matching_token')) {
+                    window.location.replace('login.html');
+                }
+            } catch (e) {
+                window.location.replace('login.html');
+            }
+        })();
+    </script>
 </head>
 <body>
 
-<div id="downloadScreen">
-    <div class="dl-icon">🎮</div>
-    <h1 class="dl-title">Card Matching Game</h1>
-    <p class="dl-sub">★ 3D MEMORY CHALLENGE ★</p>
+<!-- ================= HOME SCREEN ================= -->
+<div id="home" class="screen active">
 
-    <div class="dl-features">
-        <div class="dl-feature-item"><span>✔</span> Full-screen 3D Gaming</div>
-        <div class="dl-feature-item"><span>✔</span> Play offline anytime</div>
-        <div class="dl-feature-item"><span>✔</span> Beat the timer & level up</div>
-        <div class="dl-feature-item"><span>✔</span> Install as a native app</div>
+    <div class="home-top-bar">
+        <button id="btnProfile" class="top-icon-btn" title="Profile">👤</button>
+        <button id="btnSettings" class="top-icon-btn" title="Settings">⚙️</button>
     </div>
 
-    <button id="dlInstallBtn" class="dl-btn">⬇ INSTALL GAME</button>
-    <div id="dlSkipBtn" class="dl-skip">Skip & Play in Browser</div>
+    <h1 class="home-title">CARD MATCHING</h1>
+    <p class="home-sub">★ 3D MEMORY CHALLENGE ★</p>
 
-    <p class="dl-note">Note: This will add the game to your home screen (like an app).</p>
+    <div class="stats-row">
+        <div class="stat-card">
+            <span class="stat-icon">🏆</span>
+            <div class="stat-label">Best Level</div>
+            <div class="stat-value" id="statBestLevel">1</div>
+        </div>
+        <div class="stat-card gold">
+            <span class="stat-icon">⭐</span>
+            <div class="stat-label">Best Score</div>
+            <div class="stat-value" id="statBestScore">0</div>
+        </div>
+        <div class="stat-card cyan">
+            <span class="stat-icon">🎯</span>
+            <div class="stat-label">Matches</div>
+            <div class="stat-value" id="statMatches">0</div>
+        </div>
+    </div>
+
+    <div class="button-grid">
+        <button id="btnPlay" class="btn btn-play">▶ PLAY</button>
+        <button id="btnLevels" class="btn btn-levels">🗺 LEVELS</button>
+        <button id="btnSound" class="btn btn-sound">🔊 SOUND</button>
+        <button id="btnRules" class="btn btn-rules">📖 RULES</button>
+        <button id="btnReset" class="btn btn-reset">🗑 RESET</button>
+        <button id="btnExit" class="btn btn-exit">🚪 EXIT</button>
+    </div>
 </div>
 
+<!-- ================= GAME SCREEN ================= -->
+<div id="game-screen" class="screen">
+
+    <div class="game-top">
+        <button id="btnGameHome" class="mini-btn">🏠 HOME</button>
+        <div class="game-title">LEVEL <span id="levelBadge">1</span></div>
+        <div id="timerDisplay" class="game-timer">⏱️ 00:00</div>
+    </div>
+
+    <div class="hud">
+        <div class="hud-item" id="hud-level">LVL: 1</div>
+        <div class="hud-item" id="hud-flips">FLIPS: 0/12</div>
+        <div class="hud-item" id="hud-score">SCORE: 0</div>
+        <div class="hud-item" id="hud-hints">HINTS: 3/3</div>
+        <div class="hud-item" id="hud-status">READY</div>
+    </div>
+
+    <div id="cardGrid" class="card-grid"></div>
+
+    <div class="game-bottom">
+        <button id="btnHint" class="mini-btn">💡 HINT</button>
+        <button id="btnPause" class="mini-btn">⏸ PAUSE</button>
+        <button id="btnRestart" class="mini-btn orange">🔄 RESTART</button>
+        <button id="btnGameRules" class="mini-btn">📖 RULES</button>
+    </div>
+</div>
+
+<!-- ================= DIALOG (win / fail / rules) ================= -->
+<div id="dialogOverlay" class="dialog-overlay">
+    <div id="dialog" class="dialog">
+        <div id="dialogTitle" class="dialog-title"></div>
+        <div id="dialogSub" class="dialog-sub"></div>
+        <div id="dialogScore" class="dialog-score"></div>
+        <div id="dialogNext" class="dialog-next"></div>
+        <div id="dialogButtons" class="dialog-buttons"></div>
+    </div>
+</div>
+
+<!-- ================= PROFILE MODAL ================= -->
+<div id="profileModal" class="modal-overlay">
+    <div class="modal-box profile-box">
+        <button id="closeProfile" class="modal-close">✕</button>
+        <div class="profile-avatar">👤</div>
+        <div id="profileName" class="profile-name">Player</div>
+        <div class="profile-type-badge">Player Profile</div>
+
+        <div class="profile-info-list">
+            <div class="profile-info-item">
+                <div class="profile-info-icon">🙍</div>
+                <div class="profile-info-content">
+                    <div class="profile-info-label">Name</div>
+                    <div id="profileInfoName" class="profile-info-value">-</div>
+                </div>
+            </div>
+            <div class="profile-info-item">
+                <div class="profile-info-icon">📧</div>
+                <div class="profile-info-content">
+                    <div class="profile-info-label">Email</div>
+                    <div id="profileInfoIdentifier" class="profile-info-value">-</div>
+                </div>
+            </div>
+            <div class="profile-info-item">
+                <div class="profile-info-icon">🔒</div>
+                <div class="profile-info-content">
+                    <div class="profile-info-label">Status</div>
+                    <div id="profileInfoStatus" class="profile-info-value">-</div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- ================= SETTINGS MODAL ================= -->
+<div id="settingsModal" class="modal-overlay">
+    <div class="modal-box">
+        <button id="closeSettings" class="modal-close">✕</button>
+        <div class="modal-title">⚙️ Settings</div>
+
+        <div class="settings-list">
+            <button id="btnHelp" class="settings-item">
+                <span class="settings-item-icon">❓</span>
+                <span class="settings-item-text">
+                    <strong>Help</strong>
+                    <small>How to play the game</small>
+                </span>
+            </button>
+            <button id="btnTerms" class="settings-item">
+                <span class="settings-item-icon">📄</span>
+                <span class="settings-item-text">
+                    <strong>Terms & Conditions</strong>
+                    <small>Rules of using the game</small>
+                </span>
+            </button>
+            <button id="btnLogout" class="settings-item danger">
+                <span class="settings-item-icon">🚪</span>
+                <span class="settings-item-text">
+                    <strong>Logout</strong>
+                    <small>Sign out of your account</small>
+                </span>
+            </button>
+        </div>
+    </div>
+</div>
+
+<!-- ================= HELP MODAL ================= -->
+<div id="helpModal" class="modal-overlay">
+    <div class="modal-box">
+        <button id="closeHelp" class="modal-close">✕</button>
+        <div class="modal-title">❓ Help</div>
+        <div class="info-content">
+            <p><strong>How to play</strong></p>
+            <ul>
+                <li>Tap a card to flip it.</li>
+                <li>Find two cards with the same symbol to make a match.</li>
+                <li>Match all pairs before the timer or flips run out.</li>
+                <li>Use hints to see one matching pair for a moment.</li>
+            </ul>
+            <p><strong>Scoring</strong></p>
+            <ul>
+                <li>+100 points for every correct match.</li>
+                <li>-25 points for every wrong pair.</li>
+            </ul>
+        </div>
+    </div>
+</div>
+
+<!-- ================= TERMS MODAL ================= -->
+<div id="termsModal" class="modal-overlay">
+    <div class="modal-box">
+        <button id="closeTerms" class="modal-close">✕</button>
+        <div class="modal-title">📄 Terms & Conditions</div>
+        <div class="info-content">
+            <p><strong>Using this game</strong></p>
+            <ul>
+                <li>This game is made for fun and entertainment.</li>
+                <li>Please keep your account details safe.</li>
+                <li>Do not misuse or try to cheat the scoring system.</li>
+                <li>Your score and progress are saved to your account.</li>
+            </ul>
+        </div>
+    </div>
+</div>
+
+<script src="api.js"></script>
+<script src="game.js"></script>
 <script src="pwa.js"></script>
+
 <script>
-    document.addEventListener('DOMContentLoaded', function() {
-        var installBtn = document.getElementById('dlInstallBtn');
-        var skipBtn = document.getElementById('dlSkipBtn');
-
-        // Agar user pehle se install kar chuka hai, to direct login pe bhej do
-        if (localStorage.getItem('card_matching_installed') === 'true') {
-            window.location.href = 'login.html';
-        }
-
-        // INSTALL BUTTON
-        installBtn.addEventListener('click', function() {
-            if (window.deferredPrompt) {
-                window.deferredPrompt.prompt();
-                window.deferredPrompt.userChoice.then(function(choice) {
-                    if (choice.outcome === 'accepted') {
-                        localStorage.setItem('card_matching_installed', 'true');
-                        window.location.href = 'login.html';
-                    }
-                    window.deferredPrompt = null;
-                });
-            } else {
-                localStorage.setItem('card_matching_installed', 'true');
-                window.location.href = 'login.html';
-            }
-        });
-
-        // SKIP BUTTON
-        skipBtn.addEventListener('click', function() {
-            localStorage.setItem('card_matching_installed', 'true');
-            window.location.href = 'login.html';
-        });
-    });
-
-    // ✅ APK KE ANDAR SERVICE WORKER UNREGISTER KARO
-    // Isse APK me purana cache nahi chalega aur naya code load hoga
+    // APK me purana service worker cache hatao, taaki naya code load ho
     if ('serviceWorker' in navigator) {
         navigator.serviceWorker.getRegistrations().then(function(registrations) {
-            for (let registration of registrations) {
-                registration.unregister();
-                console.log('Service Worker unregistered');
+            for (var i = 0; i < registrations.length; i++) {
+                registrations[i].unregister();
             }
         });
     }
