@@ -36,7 +36,6 @@
 </div>
 
 <script>
-    // 5 second timer
     var progress = 0;
     var fill = document.getElementById('progressFill');
     var interval = setInterval(function() {
@@ -47,8 +46,7 @@
         if (progress >= 100) {
             clearInterval(interval);
             setTimeout(function() {
-                // ✅ Seedha Home page (index.html) pe bhejo
-                window.location.href = 'index.html';
+                window.location.href = 'index.html'; // ✅ Seedha Home page
             }, 500);
         }
     }, 100);
