@@ -1,5 +1,6 @@
 // ============================================================
 //  SIGNUP PAGE - Email Only
+//  (Already logged-in user ko guard.js seedha splash -> home bhej deta hai)
 // ============================================================
 
 var pendingUserData = null;
@@ -9,6 +10,10 @@ window.addEventListener('DOMContentLoaded', function() {
     setupButtons();
     setupInputs();
     setupOTPInputs();
+
+    // Enter dabane par page reload na ho (password URL me na chala jaye)
+    var form = document.getElementById('signupForm');
+    if (form) form.addEventListener('submit', function(e) { e.preventDefault(); });
 });
 
 function setupPasswordToggles() {
@@ -56,6 +61,8 @@ function setupButtons() {
     document.getElementById('btnCloseOtp').onclick = closeOTPModal;
 }
 
+// ✅ Ab pehle server ka jawab aata hai, tabhi OTP box khulta hai.
+//    Isse "ye email pehle se registered hai" jaisa error user ko turant dikhta hai.
 async function handleSignup() {
     hideMessages();
 
@@ -78,28 +85,28 @@ async function handleSignup() {
     if (password.length < 6) { showError('Password must be at least 6 characters'); return; }
     if (password !== confirmPassword) { showError('Passwords do not match'); return; }
 
+    var btn = document.getElementById('btnSignup');
+    if (btn.disabled) return;
+
     pendingUserData = {
         name: name,
         email: email.toLowerCase(),
         password: password
     };
 
-    var btn = document.getElementById('btnSignup');
     btn.disabled = true;
     btn.querySelector('.btn-text').textContent = 'SENDING OTP...';
 
-    // ✅ TURANT OTP MODAL KHOLO (Backend response ka wait nahi karega)
-    showOTPModal(email);
-
     try {
-        await window.AuthAPI.sendOTP(name, email, password);
-        btn.disabled = false;
-        btn.querySelector('.btn-text').textContent = 'CREATE ACCOUNT';
+        await window.AuthAPI.sendOTP(name, pendingUserData.email, password);
+        showOTPModal(pendingUserData.email);
     } catch (err) {
+        pendingUserData = null;
         showError(err.message);
-        btn.disabled = false;
-        btn.querySelector('.btn-text').textContent = 'CREATE ACCOUNT';
     }
+
+    btn.disabled = false;
+    btn.querySelector('.btn-text').textContent = 'CREATE ACCOUNT';
 }
 
 function showOTPModal(email) {
@@ -160,6 +167,8 @@ function setupOTPInputs() {
 }
 
 async function verifyOTP() {
+    if (!pendingUserData) return;
+
     var boxes = document.querySelectorAll('.otp-box');
     var entered = '';
     boxes.forEach(function(box) { entered += box.value; });
@@ -171,17 +180,21 @@ async function verifyOTP() {
     }
 
     var btn = document.getElementById('btnVerifyOtp');
+    if (btn.disabled) return;
     btn.disabled = true;
     btn.querySelector('.btn-text').textContent = 'VERIFYING...';
 
     try {
         await window.AuthAPI.verifyOTP(entered, pendingUserData.email);
 
+        // Password memory se hata do
+        pendingUserData = null;
+
         closeOTPModal();
         showSuccess('Account created! Redirecting...');
 
         setTimeout(function() {
-            window.location.href = 'splash.html';
+            window.location.replace('splash.html');
         }, 1000);
 
     } catch (err) {
@@ -195,10 +208,14 @@ async function verifyOTP() {
 async function resendOTP() {
     if (!pendingUserData) return;
 
+    var btn = document.getElementById('btnResendOtp');
+    if (btn.disabled) return;
+    var original = 'Didn\'t receive? Resend OTP';
+
     try {
-        var btn = document.getElementById('btnResendOtp');
+        btn.disabled = true;
         btn.textContent = 'Sending...';
-        
+
         await window.AuthAPI.sendOTP(
             pendingUserData.name,
             pendingUserData.email,
@@ -212,17 +229,19 @@ async function resendOTP() {
         var first = document.querySelector('.otp-box');
         if (first) first.focus();
 
-        var original = 'Didn\'t receive? Resend OTP';
         btn.textContent = '✓ New OTP sent to your email!';
         btn.style.color = '#4ade80';
-        setTimeout(function() {
-            btn.textContent = original;
-            btn.style.color = '';
-        }, 3000);
 
     } catch (err) {
-        alert('Failed to resend OTP: ' + err.message);
+        btn.textContent = '✗ ' + err.message;
+        btn.style.color = '#f87171';
     }
+
+    setTimeout(function() {
+        btn.textContent = original;
+        btn.style.color = '';
+        btn.disabled = false;
+    }, 3000);
 }
 
 function closeOTPModal() {

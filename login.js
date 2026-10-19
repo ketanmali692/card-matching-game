@@ -1,5 +1,6 @@
 // ============================================================
 //  LOGIN PAGE - Email Only + Forgot Password Flow
+//  (Already logged-in user ko guard.js seedha splash -> home bhej deta hai)
 // ============================================================
 
 var forgotEmailValue = '';
@@ -10,6 +11,10 @@ window.addEventListener('DOMContentLoaded', function() {
     setupButtons();
     setupInputs();
     setupForgotPassword();
+
+    // Enter dabane par page reload na ho (password URL me na chala jaye)
+    var form = document.getElementById('loginForm');
+    if (form) form.addEventListener('submit', function(e) { e.preventDefault(); });
 });
 
 // ---------- PASSWORD TOGGLES ----------
@@ -81,16 +86,17 @@ async function handleLogin() {
     if (!isEmail) { showError('Please enter a valid email address'); return; }
 
     var btn = document.getElementById('btnLogin');
+    if (btn.disabled) return;
     btn.disabled = true;
     btn.querySelector('.btn-text').textContent = 'LOGGING IN...';
 
     try {
-        await window.AuthAPI.login(email, password);
+        await window.AuthAPI.login(email.toLowerCase(), password);
         showSuccess('Login successful! Redirecting...');
 
         setTimeout(function() {
             // ✅ 5 second Splash pe bhejo
-            window.location.href = 'splash.html';
+            window.location.replace('splash.html');
         }, 800);
 
     } catch (err) {
@@ -129,6 +135,7 @@ function openForgotModal() {
 
 function closeForgotModal() {
     document.getElementById('forgotModal').classList.remove('active');
+    forgotOtpValue = '';
 }
 
 function setupForgotPassword() {
@@ -181,6 +188,8 @@ function setupForgotPassword() {
     });
 }
 
+// ✅ Ab pehle server ka jawab aata hai, tabhi OTP wala step khulta hai.
+//    Isse "din me 3 baar" jaisi limit ka error user ko dikh jata hai.
 async function handleSendForgotOtp() {
     var errEl = document.getElementById('forgotError1');
     errEl.classList.add('hidden');
@@ -200,30 +209,31 @@ async function handleSendForgotOtp() {
         return;
     }
 
+    var btn = document.getElementById('btnSendForgotOtp');
+    if (btn.disabled) return;
+
     forgotEmailValue = email.toLowerCase();
 
-    var btn = document.getElementById('btnSendForgotOtp');
     btn.disabled = true;
     btn.querySelector('.btn-text').textContent = 'SENDING OTP...';
 
-    document.getElementById('forgotOtpSubtitle').textContent = "Enter the 6-digit OTP sent to " + forgotEmailValue;
-    document.getElementById('forgotStep1').style.display = 'none';
-    document.getElementById('forgotStep2').style.display = 'block';
-    setTimeout(function() {
-        var first = document.querySelector('#forgotOtpInputs .otp-box');
-        if (first) first.focus();
-    }, 200);
-
     try {
         await window.AuthAPI.forgotPassword(forgotEmailValue);
-        btn.disabled = false;
-        btn.querySelector('.btn-text').textContent = 'SEND OTP';
+
+        document.getElementById('forgotOtpSubtitle').textContent = "Enter the 6-digit OTP sent to " + forgotEmailValue;
+        document.getElementById('forgotStep1').style.display = 'none';
+        document.getElementById('forgotStep2').style.display = 'block';
+        setTimeout(function() {
+            var first = document.querySelector('#forgotOtpInputs .otp-box');
+            if (first) first.focus();
+        }, 200);
     } catch (err) {
         errEl.textContent = '⚠ ' + err.message;
         errEl.classList.remove('hidden');
-        btn.disabled = false;
-        btn.querySelector('.btn-text').textContent = 'SEND OTP';
     }
+
+    btn.disabled = false;
+    btn.querySelector('.btn-text').textContent = 'SEND OTP';
 }
 
 async function handleVerifyForgotOtp() {
@@ -252,6 +262,7 @@ async function handleVerifyForgotOtp() {
 
 async function handleResendForgotOtp() {
     var btn = document.getElementById('btnResendForgotOtp');
+    if (btn.disabled) return;
     var original = btn.textContent;
     btn.textContent = 'Sending...';
     btn.disabled = true;
@@ -269,7 +280,7 @@ async function handleResendForgotOtp() {
         if (first) first.focus();
 
     } catch (err) {
-        btn.textContent = '✗ Failed: ' + err.message;
+        btn.textContent = '✗ ' + err.message;
         btn.style.color = '#f87171';
     }
 
@@ -304,21 +315,36 @@ async function handleResetPassword() {
     }
 
     var btn = document.getElementById('btnResetPassword');
+    if (btn.disabled) return;
     btn.disabled = true;
     btn.querySelector('.btn-text').textContent = 'RESETTING...';
 
     try {
         await window.AuthAPI.resetPassword(forgotEmailValue, forgotOtpValue, newPw);
 
+        forgotOtpValue = '';
+        document.getElementById('newPassword').value = '';
+        document.getElementById('confirmNewPassword').value = '';
+
         document.getElementById('forgotStep3').style.display = 'none';
         document.getElementById('forgotStep4').style.display = 'block';
 
     } catch (err) {
-        errEl.textContent = '❌ ' + err.message;
-        errEl.classList.remove('hidden');
-        btn.disabled = false;
-        btn.querySelector('.btn-text').textContent = 'RESET PASSWORD';
+        // OTP galat/expire hua to user ko OTP wale step par wapas bhejo
+        if (/otp/i.test(err.message)) {
+            var otpErr = document.getElementById('forgotError2');
+            otpErr.textContent = '❌ ' + err.message;
+            otpErr.classList.remove('hidden');
+            document.getElementById('forgotStep3').style.display = 'none';
+            document.getElementById('forgotStep2').style.display = 'block';
+        } else {
+            errEl.textContent = '❌ ' + err.message;
+            errEl.classList.remove('hidden');
+        }
     }
+
+    btn.disabled = false;
+    btn.querySelector('.btn-text').textContent = 'RESET PASSWORD';
 }
 
 function showError(msg) {
