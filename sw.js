@@ -4,7 +4,7 @@
 //     internet na ho tabhi purani cache wali file dikhayega.
 // ============================================================
 
-var CACHE_NAME = 'card-matching-v10';   // ✅ Jab bhi code badlo, ye number badhao (v11, v12...)
+var CACHE_NAME = 'card-matching-v11';   // ✅ Jab bhi code badlo, ye number badhao (v11, v12...)
 
 var STATIC_ASSETS = [
     './',
@@ -19,6 +19,9 @@ var STATIC_ASSETS = [
     './login.js',
     './signup.js',
     './pwa.js',
+    './guard.js',
+    './levels.js',
+    './splash.js',
     './manifest.json'
 ];
 

@@ -1,5 +1,5 @@
 // ============================================================
-//  CARD MATCHING GAME - WITH TIMER & 3D UI (SECURE)
+//  CARD MATCHING GAME - WITH TIMER & 3D UI
 // ============================================================
 
 var SYMBOLS = ['★', '◆', '●', '▲', '■', '✦', '✚', '✖', '⬟', '⬢', '♣', '♦', '♠', '♥', '☀', '☾', '☘', '⚡', '☯', '✿'];
@@ -8,10 +8,7 @@ var MATCH_POINTS = 100;
 var WRONG_PENALTY = 25;
 var USER_KEY = 'card_matching_user_v1';
 
-// ✅ AUTO LOGIN CHECK
-if (localStorage.getItem('isLoggedIn') !== 'true') {
-    window.location.href = 'login.html';
-}
+var WRONG_FLIP_BACK_MS = 550;   // ✅ galat pair kitni der dikhe, phir wapas flip (pehle 800)
 
 var timerInterval = null;
 var timeLeft = 0;
@@ -21,7 +18,8 @@ function getSaveKey() {
         var raw = localStorage.getItem(USER_KEY);
         if (raw) {
             var u = JSON.parse(raw);
-            if (u && u.identifier) return 'card_matching_game_save_v1_' + u.identifier.toLowerCase();
+            var uid = u && (u.identifier || u.email || u._id || u.id);
+            if (uid) return 'card_matching_game_save_v1_' + String(uid).toLowerCase();
         }
     } catch (e) {}
     return 'card_matching_game_save_v1_guest';
@@ -38,42 +36,80 @@ var state = {
     cardValues: [], cards: [], soundOn: true
 };
 
+// ============================================================
+//  SOUND (WebAudio)
+// ============================================================
 var audioContext = null;
-function initAudio() { if (!audioContext) { try { audioContext = new (window.AudioContext || window.webkitAudioContext)(); } catch (e) {} } }
+function initAudio() {
+    if (!audioContext) {
+        try { audioContext = new (window.AudioContext || window.webkitAudioContext)(); } catch (e) {}
+    }
+    if (audioContext && audioContext.state === 'suspended') {
+        try { audioContext.resume(); } catch (e) {}
+    }
+}
 
+function canPlaySound() {
+    if (!state.soundOn || !audioContext) return false;
+    if (audioContext.state === 'suspended') {
+        try { audioContext.resume(); } catch (e) {}
+    }
+    return true;
+}
+
+// Ek note bajata hai (freq, shuru hone ka time, lambai, wave type, volume, end freq)
+function tone(freq, start, dur, type, vol, endFreq) {
+    var osc = audioContext.createOscillator();
+    var gain = audioContext.createGain();
+    osc.type = type || 'sine';
+    osc.frequency.setValueAtTime(freq, start);
+    if (endFreq) osc.frequency.exponentialRampToValueAtTime(endFreq, start + dur);
+    gain.gain.setValueAtTime(0.0001, start);
+    gain.gain.exponentialRampToValueAtTime(vol, start + 0.008);
+    gain.gain.exponentialRampToValueAtTime(0.0001, start + dur);
+    osc.connect(gain);
+    gain.connect(audioContext.destination);
+    osc.start(start);
+    osc.stop(start + dur + 0.05);
+}
+
+// ✅ MATCH: chamakdar "ting-ting-ting" bell wali sparkle arpeggio
 function playMatchSound() {
-    if (!state.soundOn || !audioContext) return;
-    var notes = [1046.50, 1318.51, 1567.98];
-    var startTime = audioContext.currentTime;
-    notes.forEach(function(freq, i) {
-        var osc = audioContext.createOscillator();
-        var gain = audioContext.createGain();
-        osc.type = 'sine'; osc.frequency.value = freq;
-        var t = startTime + i * 0.09;
-        gain.gain.setValueAtTime(0, t);
-        gain.gain.linearRampToValueAtTime(0.3, t + 0.005);
-        gain.gain.exponentialRampToValueAtTime(0.001, t + 0.45);
-        osc.connect(gain); gain.connect(audioContext.destination);
-        osc.start(t); osc.stop(t + 0.5);
+    if (!canPlaySound()) return;
+    var t = audioContext.currentTime;
+    var notes = [[1046.5, 0], [1318.5, 0.07], [1568.0, 0.14], [2093.0, 0.21]];
+    notes.forEach(function(n) {
+        tone(n[0], t + n[1], 0.55, 'sine', 0.22);
+        tone(n[0] * 2, t + n[1], 0.35, 'sine', 0.06);
+        tone(n[0] * 3, t + n[1], 0.2, 'sine', 0.025);
     });
 }
 
-// ✅ BACKEND SE LEVEL SYNC KARO
-async function syncLevelFromBackend() {
-    if (window.getToken && window.getToken()) {
-        try {
-            var res = await fetch('https://card-matching-backend.onrender.com/api/score/progress', {
-                headers: { 'Authorization': 'Bearer ' + window.getToken() }
-            });
-            var data = await res.json();
-            if (data && data.unlockedLevel) {
-                state.unlockedLevel = data.unlockedLevel;
-                state.totalScore = data.totalScore || 0;
-            }
-        } catch (e) {
-            console.log('Offline mode - using local data');
-        }
-    }
+// Galat pair: halki si neeche girti "uh-oh" awaaz
+function playWrongSound() {
+    if (!canPlaySound()) return;
+    var t = audioContext.currentTime;
+    tone(196, t, 0.18, 'triangle', 0.18, 130);
+    tone(147, t + 0.12, 0.22, 'triangle', 0.16, 98);
+}
+
+// Card palatne ki chhoti si tick awaaz
+function playFlipSound() {
+    if (!canPlaySound()) return;
+    var t = audioContext.currentTime;
+    tone(700, t, 0.05, 'sine', 0.1, 350);
+}
+
+// Level jeetne par chhota fanfare
+function playWinSound() {
+    if (!canPlaySound()) return;
+    var t = audioContext.currentTime;
+    var notes = [523.25, 659.25, 783.99, 1046.5, 1318.5];
+    notes.forEach(function(f, i) {
+        var d = (i === notes.length - 1) ? 0.9 : 0.3;
+        tone(f, t + i * 0.11, d, 'triangle', 0.2);
+        tone(f * 2, t + i * 0.11, d * 0.6, 'sine', 0.05);
+    });
 }
 
 function saveProgress() {
@@ -94,23 +130,247 @@ function loadProgress() {
     try {
         SAVE_KEY = getSaveKey();
         var raw = localStorage.getItem(SAVE_KEY);
-        if (raw) {
-            var d = JSON.parse(raw);
-            state.unlockedLevel = d.unlockedLevel || 1;
-            state.totalScore = d.totalScore || 0;
-            state.bestLevel = d.bestLevel || 1;
-            state.totalMatches = d.totalMatches || 0;
-            state.completedLevels = new Set(d.completedLevels || []);
-            state.levelBestScores = d.levelBestScores || {};
-            state.soundOn = d.soundOn !== false;
-        }
+        if (!raw) return;
+        var d = JSON.parse(raw);
+        state.unlockedLevel = d.unlockedLevel || 1;
+        state.totalScore = d.totalScore || 0;
+        state.bestLevel = d.bestLevel || 1;
+        state.totalMatches = d.totalMatches || 0;
+        state.completedLevels = new Set(d.completedLevels || []);
+        state.levelBestScores = d.levelBestScores || {};
+        state.soundOn = d.soundOn !== false;
     } catch (e) {}
-    
-    // Sync with backend
-    syncLevelFromBackend();
 }
 
-// ... (Aapke baaki game functions - startGame, renderCards, checkMatch, etc. waise hi rahenge) ...
+function $(id) { return document.getElementById(id); }
+function showScreen(id) {
+    document.querySelectorAll('.screen').forEach(function(s) { s.classList.remove('active'); });
+    if (id) $(id).classList.add('active');
+}
+
+// TIMER FUNCTIONS
+function startTimer(seconds) {
+    clearInterval(timerInterval);
+    timeLeft = seconds;
+    updateTimerDisplay();
+    timerInterval = setInterval(function() {
+        if (state.paused || state.gameOver) return;
+        timeLeft--;
+        updateTimerDisplay();
+        if (timeLeft <= 0) { clearInterval(timerInterval); levelFailed(true); }
+    }, 1000);
+}
+
+function updateTimerDisplay() {
+    var el = $('timerDisplay');
+    if (!el) return;
+    var m = Math.floor(timeLeft / 60);
+    var s = timeLeft % 60;
+    el.textContent = '⏱️ ' + (m < 10 ? '0' : '') + m + ':' + (s < 10 ? '0' : '') + s;
+    if (timeLeft <= 10) el.classList.add('warning'); else el.classList.remove('warning');
+}
+
+function stopTimer() { clearInterval(timerInterval); }
+
+function startGame(level) {
+    initAudio();
+
+    // ✅ LEVEL LOCK: jo level abhi unlock nahi hua use kholne hi mat do
+    if (level > state.unlockedLevel) level = state.unlockedLevel;
+    if (level < 1) level = 1;
+
+    state.currentLevel = level;
+    configureLevel(level);
+    state.firstCard = null; state.secondCard = null; state.flipsUsed = 0;
+    state.matchedPairs = 0; state.score = 0; state.hintsLeft = MAX_HINTS;
+    state.waiting = false; state.paused = false; state.gameOver = false; state.hintActive = false;
+
+    updateHUD();
+    renderCards();
+    showScreen('game-screen');
+
+    var levelTime = 40 + (level - 1) * 10;
+    startTimer(levelTime);
+    $('levelBadge').textContent = level;
+}
+
+function configureLevel(level) {
+    state.pairs = Math.min(10, 4 + (level - 1) * 2);
+    state.flipsAllowed = Math.min(60, 12 + (level - 1) * 4);
+}
+
+function renderCards() {
+    var grid = $('cardGrid'); grid.innerHTML = '';
+    var values = [];
+    for (var i = 0; i < state.pairs; i++) {
+        var symIdx = i % SYMBOLS.length;
+        values.push({ symbol: SYMBOLS[symIdx], color: getColor(symIdx) });
+        values.push({ symbol: SYMBOLS[symIdx], color: getColor(symIdx) });
+    }
+    shuffle(values);
+    state.cardValues = values; state.cards = [];
+    var total = values.length; var cols = 4;
+    if (total > 16) cols = 5; if (total > 20) cols = 6;
+    grid.style.gridTemplateColumns = 'repeat(' + cols + ', minmax(0, 1fr))';
+    grid.style.maxWidth = (cols * 130) + 'px';
+    grid.style.margin = '0 auto';
+
+    values.forEach(function(val, idx) {
+        var card = document.createElement('div');
+        card.className = 'card';
+        card.innerHTML = '<div class="card-inner"><div class="card-front">?</div><div class="card-back" style="color: ' + val.color + '">' + val.symbol + '</div></div>';
+        card.addEventListener('click', function() { handleCardClick(idx); });
+        grid.appendChild(card);
+        state.cards.push({ el: card, matched: false, revealed: false });
+    });
+}
+
+// ✅ Gehre (dark) rang, taaki safed/cream card par saaf dikhein
+function getColor(idx) {
+    var colors = ['#e63946', '#1d4ed8', '#15803d', '#d97706', '#7c3aed', '#0e7490', '#be185d', '#c2410c'];
+    return colors[idx % colors.length];
+}
+
+function shuffle(arr) {
+    for (var i = arr.length - 1; i > 0; i--) {
+        var j = Math.floor(Math.random() * (i + 1));
+        var t = arr[i]; arr[i] = arr[j]; arr[j] = t;
+    }
+}
+
+function handleCardClick(index) {
+    if (state.gameOver || state.paused || state.waiting || state.hintActive) return;
+    var card = state.cards[index];
+    if (!card || card.matched || card.revealed) return;
+    if (state.firstCard === index) return;
+    card.revealed = true; card.el.classList.add('flipped');
+    playFlipSound();
+    if (state.firstCard === null) { state.firstCard = index; setStatus('CHOOSE SECOND CARD'); return; }
+    state.secondCard = index; state.flipsUsed++; updateHUD(); checkMatch();
+}
+
+function checkMatch() {
+    var a = state.firstCard; var b = state.secondCard;
+    var valA = state.cardValues[a].symbol; var valB = state.cardValues[b].symbol;
+    if (valA === valB) {
+        state.matchedPairs++; state.score += MATCH_POINTS; state.totalMatches++;
+        state.cards[a].matched = true; state.cards[b].matched = true;
+        state.cards[a].el.classList.add('matched'); state.cards[b].el.classList.add('matched');
+        playMatchSound(); updateHUD(); setStatus('MATCH! +' + MATCH_POINTS);
+        state.firstCard = null; state.secondCard = null;
+        if (state.matchedPairs === state.pairs) setTimeout(finishLevel, 650);
+    } else {
+        state.score = Math.max(0, state.score - WRONG_PENALTY);
+        state.cards[a].el.classList.add('wrong'); state.cards[b].el.classList.add('wrong');
+        playWrongSound();
+        updateHUD(); setStatus('WRONG PAIR'); state.waiting = true;
+        setTimeout(function() {
+            state.cards[a].el.classList.remove('wrong', 'flipped'); state.cards[b].el.classList.remove('wrong', 'flipped');
+            state.cards[a].revealed = false; state.cards[b].revealed = false;
+            state.firstCard = null; state.secondCard = null; state.waiting = false;
+            if (state.flipsUsed >= state.flipsAllowed && state.matchedPairs < state.pairs) levelFailed(false);
+            else setStatus('TRY AGAIN');
+        }, WRONG_FLIP_BACK_MS);
+    }
+}
+
+function updateHUD() {
+    $('hud-level').textContent = 'LVL: ' + state.currentLevel;
+    $('hud-flips').textContent = 'FLIPS: ' + state.flipsUsed + '/' + state.flipsAllowed;
+    $('hud-score').textContent = 'SCORE: ' + state.score;
+    $('hud-hints').textContent = 'HINTS: ' + state.hintsLeft + '/' + MAX_HINTS;
+}
+
+function setStatus(text) { $('hud-status').textContent = text; }
+
+function useHint() {
+    if (state.gameOver || state.paused || state.waiting || state.hintActive) return;
+    if (state.hintsLeft <= 0) { setStatus('NO HINTS LEFT!'); return; }
+    var map = {};
+    for (var i = 0; i < state.cards.length; i++) {
+        if (state.cards[i].matched) continue;
+        var sym = state.cardValues[i].symbol; if (!map[sym]) map[sym] = []; map[sym].push(i);
+    }
+    for (var sym2 in map) {
+        if (map[sym2].length >= 2) {
+            var a = map[sym2][0]; var b = map[sym2][1];
+            state.hintsLeft--; state.hintActive = true; updateHUD(); setStatus('HINT USED');
+            state.cards[a].el.classList.add('hinted', 'flipped'); state.cards[b].el.classList.add('hinted', 'flipped');
+            setTimeout(function() {
+                if (!state.cards[a].matched) { state.cards[a].el.classList.remove('hinted', 'flipped'); state.cards[a].revealed = false; }
+                if (!state.cards[b].matched) { state.cards[b].el.classList.remove('hinted', 'flipped'); state.cards[b].revealed = false; }
+                state.hintActive = false; setStatus('HINT FINISHED');
+            }, 1300); return;
+        }
+    }
+    setStatus('NO HINT AVAILABLE');
+}
+
+function finishLevel() {
+    state.gameOver = true; stopTimer();
+    playWinSound();
+    var prev = state.levelBestScores[state.currentLevel] || 0;
+    if (state.score > prev) state.levelBestScores[state.currentLevel] = state.score;
+    if (!state.completedLevels.has(state.currentLevel)) { state.totalScore += state.score; state.completedLevels.add(state.currentLevel); }
+    if (state.currentLevel + 1 > state.unlockedLevel) state.unlockedLevel = state.currentLevel + 1;
+    if (state.currentLevel > state.bestLevel) state.bestLevel = state.currentLevel;
+    saveProgress();
+    if (window.ScoreAPI && window.getToken && window.getToken()) { window.ScoreAPI.update(state.currentLevel, state.score, true, state.pairs).catch(function(err) { console.log(err); }); }
+    showDialog({
+        type: 'success', title: 'CONGRATULATIONS!', sub: 'Level ' + state.currentLevel + ' Complete!',
+        score: 'Score: ' + state.score + ' | Time Left: ' + timeLeft + 's', next: '▶ NEXT LEVEL: ' + (state.currentLevel + 1),
+        buttons: [
+            { label: '🏠 HOME', cls: 'btn-home', action: function() { closeDialog(); goHome(); } },
+            { label: '▶ NEXT', cls: 'btn-next', action: function() { closeDialog(); startGame(state.currentLevel + 1); } }
+        ]
+    });
+}
+
+function levelFailed(isTimeOut) {
+    state.gameOver = true; stopTimer();
+    showDialog({
+        type: 'fail', title: isTimeOut ? 'TIME UP!' : 'LEVEL FAILED!',
+        sub: isTimeOut ? 'Time limit khatam ho gaya!' : 'Flips khatam ho gaye!',
+        score: 'Level ' + state.currentLevel + ' wapas khelna padega.', next: '',
+        buttons: [
+            { label: '🏠 HOME', cls: 'btn-home', action: function() { closeDialog(); goHome(); } },
+            { label: '🔄 RETRY', cls: 'btn-retry', action: function() { closeDialog(); startGame(state.currentLevel); } }
+        ]
+    });
+}
+
+function showDialog(opts) {
+    var overlay = $('dialogOverlay'); var dialog = $('dialog');
+    dialog.className = 'dialog ' + (opts.type || '');
+    $('dialogTitle').textContent = opts.title; $('dialogSub').textContent = opts.sub;
+    $('dialogScore').textContent = opts.score; $('dialogNext').textContent = opts.next;
+    var cont = $('dialogButtons'); cont.innerHTML = '';
+    opts.buttons.forEach(function(b) {
+        var btn = document.createElement('button');
+        btn.className = 'mini-btn ' + b.cls; btn.textContent = b.label; btn.onclick = b.action; cont.appendChild(btn);
+    });
+    overlay.classList.add('active');
+}
+
+function closeDialog() { $('dialogOverlay').classList.remove('active'); }
+
+function goHome() {
+    state.gameOver = true; stopTimer(); renderHome(); showScreen('home');
+}
+
+function renderHome() {
+    var el1 = $('statBestLevel'); var el2 = $('statBestScore'); var el3 = $('statMatches'); var el4 = $('btnSound');
+    if (el1) el1.textContent = state.bestLevel;
+    if (el2) el2.textContent = getBestScore();
+    if (el3) el3.textContent = state.totalMatches;
+    if (el4) el4.textContent = state.soundOn ? '🔊 SOUND' : '🔇 SOUND';
+}
+
+function getBestScore() {
+    var best = 0;
+    for (var k in state.levelBestScores) { if (state.levelBestScores[k] > best) best = state.levelBestScores[k]; }
+    return best;
+}
 
 function setupButtons() {
     $('btnPlay').onclick = function() { startGame(state.unlockedLevel); };
@@ -122,17 +382,9 @@ function setupButtons() {
             next: '', buttons: [{ label: 'OK', cls: 'btn-next', action: closeDialog }]
         });
     };
-    
-    // ✅ RESET BUTTON HATA DIYA HAI
-
     $('btnExit').onclick = function() {
         saveProgress();
-        if (confirm('Logout and close?')) { 
-            localStorage.removeItem(USER_KEY); 
-            localStorage.removeItem('card_matching_token'); 
-            localStorage.removeItem('isLoggedIn'); // Logout flag hatao
-            window.location.href = 'login.html'; 
-        }
+        if (confirm('Logout and close?')) { if (window.cmTrace) window.cmTrace('logout pressed'); localStorage.removeItem(USER_KEY); localStorage.removeItem('card_matching_token'); window.location.href = 'login.html'; }
     };
     $('btnGameHome').onclick = goHome;
     $('btnHint').onclick = useHint;
@@ -141,7 +393,27 @@ function setupButtons() {
     $('btnGameRules').onclick = $('btnRules').onclick;
 }
 
-// ... (Aapka baaki code) ...
+function setupProfileAndSettings() {
+    var btnProfile = document.getElementById('btnProfile');
+    if (btnProfile) btnProfile.onclick = function() {
+        var user = null; try { var raw = localStorage.getItem(USER_KEY); if (raw) user = JSON.parse(raw); } catch(e) {}
+        if ($('profileName')) $('profileName').textContent = user ? user.name : 'Player';
+        if ($('profileInfoName')) $('profileInfoName').textContent = user ? user.name : '-';
+        if ($('profileInfoIdentifier')) $('profileInfoIdentifier').textContent = user ? user.identifier : '-';
+        if ($('profileInfoStatus')) { $('profileInfoStatus').textContent = '✅ Active'; $('profileInfoStatus').style.color = '#4ade80'; }
+        document.getElementById('profileModal').classList.add('active');
+    };
+    var btnSettings = document.getElementById('btnSettings');
+    if (btnSettings) btnSettings.onclick = function() { document.getElementById('settingsModal').classList.add('active'); };
+    var closeProfile = document.getElementById('closeProfile'); if (closeProfile) closeProfile.onclick = function() { document.getElementById('profileModal').classList.remove('active'); };
+    var closeSettings = document.getElementById('closeSettings'); if (closeSettings) closeSettings.onclick = function() { document.getElementById('settingsModal').classList.remove('active'); };
+    var closeHelp = document.getElementById('closeHelp'); if (closeHelp) closeHelp.onclick = function() { document.getElementById('helpModal').classList.remove('active'); };
+    var closeTerms = document.getElementById('closeTerms'); if (closeTerms) closeTerms.onclick = function() { document.getElementById('termsModal').classList.remove('active'); };
+    var btnHelp = document.getElementById('btnHelp'); if (btnHelp) btnHelp.onclick = function() { document.getElementById('settingsModal').classList.remove('active'); document.getElementById('helpModal').classList.add('active'); };
+    var btnTerms = document.getElementById('btnTerms'); if (btnTerms) btnTerms.onclick = function() { document.getElementById('settingsModal').classList.remove('active'); document.getElementById('termsModal').classList.add('active'); };
+    var btnLogout = document.getElementById('btnLogout'); if (btnLogout) btnLogout.onclick = function() { if (confirm('Logout?')) { if (window.cmTrace) window.cmTrace('logout pressed'); localStorage.removeItem(USER_KEY); localStorage.removeItem('card_matching_token'); window.location.href = 'login.html'; } };
+    document.querySelectorAll('.modal-overlay').forEach(function(overlay) { overlay.addEventListener('click', function(e) { if (e.target === overlay) overlay.classList.remove('active'); }); });
+}
 
 window.addEventListener('DOMContentLoaded', function() {
     loadProgress();

@@ -187,6 +187,8 @@ async function verifyOTP() {
     try {
         await window.AuthAPI.verifyOTP(entered, pendingUserData.email);
 
+        if (window.cmTrace) window.cmTrace('signup ok, token saved=' + (window.getToken() ? 'yes' : 'NO') + ' -> splash.html');
+
         // Password memory se hata do
         pendingUserData = null;
 

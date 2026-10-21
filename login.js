@@ -92,6 +92,7 @@ async function handleLogin() {
 
     try {
         await window.AuthAPI.login(email.toLowerCase(), password);
+        if (window.cmTrace) window.cmTrace('login ok, token saved=' + (window.getToken() ? 'yes' : 'NO') + ' -> splash.html');
         showSuccess('Login successful! Redirecting...');
 
         setTimeout(function() {

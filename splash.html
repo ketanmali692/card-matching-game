@@ -5,6 +5,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <meta name="theme-color" content="#0b1130">
     <title>Loading...</title>
+    <script src="guard.js" data-mode="require-login"></script>
     <link rel="stylesheet" href="style.css">
     <style>
         #splash {
@@ -48,22 +49,6 @@
     <div class="progress-bar"><div class="progress-fill" id="progressFill"></div></div>
 </div>
 
-<script>
-    var progress = 0;
-    var fill = document.getElementById('progressFill');
-    var interval = setInterval(function() {
-        progress += 2;
-        if (progress > 100) progress = 100;
-        fill.style.width = progress + '%';
-        
-        if (progress >= 100) {
-            clearInterval(interval);
-            setTimeout(function() {
-                // ✅ Seedha Home page (index.html) pe bhejo
-                window.location.href = 'index.html';
-            }, 500);
-        }
-    }, 100);
-</script>
+<script src="splash.js"></script>
 </body>
 </html>

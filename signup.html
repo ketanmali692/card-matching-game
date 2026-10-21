@@ -4,7 +4,12 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <meta name="theme-color" content="#0a1929">
+    <meta name="referrer" content="no-referrer">
     <title>Sign Up - Card Matching Game</title>
+
+    <!-- Pehle se logged in hai to seedha splash -> home -->
+    <script src="guard.js" data-mode="redirect-if-logged-in"></script>
+
     <link rel="stylesheet" href="login.css">
 </head>
 <body>
@@ -20,25 +25,25 @@
             </div>
         </div>
 
-        <form class="auth-form" id="signupForm" onsubmit="return false;">
+        <form class="auth-form" id="signupForm">
             <div class="input-group">
                 <label>Full Name</label>
                 <div class="input-wrapper">
-                    <input type="text" id="nameInput" placeholder="Enter your full name">
+                    <input type="text" id="nameInput" placeholder="Enter your full name" autocomplete="name" maxlength="50">
                 </div>
             </div>
 
             <div class="input-group">
                 <label>Email Address</label>
                 <div class="input-wrapper">
-                    <input type="email" id="emailInput" placeholder="Enter your email address">
+                    <input type="email" id="emailInput" placeholder="Enter your email address" autocomplete="email" autocapitalize="off" autocorrect="off" spellcheck="false" maxlength="254">
                 </div>
             </div>
 
             <div class="input-group">
                 <label>Password</label>
                 <div class="input-wrapper">
-                    <input type="password" id="passwordInput" placeholder="Create password">
+                    <input type="password" id="passwordInput" placeholder="Create password" autocomplete="new-password" maxlength="128">
                     <button type="button" class="eye-btn" id="togglePassword">
                         <svg viewBox="0 0 24 24" class="eye-icon" id="eyeIcon">
                             <path d="M12 5c-7 0-11 7-11 7s4 7 11 7 11-7 11-7-4-7-11-7zm0 12a5 5 0 110-10 5 5 0 010 10zm0-8a3 3 0 100 6 3 3 0 000-6z"/>
@@ -50,7 +55,7 @@
             <div class="input-group">
                 <label>Confirm Password</label>
                 <div class="input-wrapper">
-                    <input type="password" id="confirmPasswordInput" placeholder="Confirm password">
+                    <input type="password" id="confirmPasswordInput" placeholder="Confirm password" autocomplete="new-password" maxlength="128">
                     <button type="button" class="eye-btn" id="toggleConfirmPassword">
                         <svg viewBox="0 0 24 24" class="eye-icon" id="eyeIcon2">
                             <path d="M12 5c-7 0-11 7-11 7s4 7 11 7 11-7 11-7-4-7-11-7zm0 12a5 5 0 110-10 5 5 0 010 10zm0-8a3 3 0 100 6 3 3 0 000-6z"/>
