@@ -1,10 +1,12 @@
 // ============================================================
-//  API HELPER - Backend Connection
+//  API HELPER - Backend Connection (secure version)
 // ============================================================
 
 window.API_URL = 'https://card-matching-backend.onrender.com/api';
 window.TOKEN_KEY = 'card_matching_token';
 window.USER_KEY = 'card_matching_user_v1';
+
+var API_TIMEOUT_MS = 45000;   // Render free server ko jagne me time lag sakta hai
 
 window.saveToken = function(t) {
     localStorage.setItem('card_matching_token', t);
@@ -31,25 +33,70 @@ window.getUser = function() {
     }
 };
 
+// Session khatam / token galat ho to user ko login par bhej do
+window.forceLogout = function() {
+    if (window.cmTrace) window.cmTrace('forceLogout() called -> login.html');
+    window.clearToken();
+    window.location.replace('login.html');
+};
+
 window.apiCall = async function(endpoint, method, data, authRequired) {
     method = method || 'GET';
     authRequired = authRequired || false;
 
-    var headers = { 'Content-Type': 'application/json' };
+    var headers = {
+        'Content-Type': 'application/json',
+        'Accept': 'application/json'
+    };
 
     if (authRequired) {
         var token = window.getToken();
-        if (token) headers['Authorization'] = 'Bearer ' + token;
+        if (!token) {
+            window.forceLogout();
+            throw new Error('Please login again');
+        }
+        headers['Authorization'] = 'Bearer ' + token;
     }
 
-    var options = { method: method, headers: headers };
+    var controller = new AbortController();
+    var timer = setTimeout(function() { controller.abort(); }, API_TIMEOUT_MS);
+
+    var options = {
+        method: method,
+        headers: headers,
+        signal: controller.signal,
+        credentials: 'omit',
+        cache: 'no-store'
+    };
     if (data) options.body = JSON.stringify(data);
 
-    var response = await fetch(window.API_URL + endpoint, options);
-    var result = await response.json();
+    var response;
+    try {
+        response = await fetch(window.API_URL + endpoint, options);
+    } catch (err) {
+        clearTimeout(timer);
+        if (err && err.name === 'AbortError') {
+            throw new Error('Server slow hai. Thodi der baad dobara try karo.');
+        }
+        throw new Error('Internet ya server se connection nahi ho paya.');
+    }
+    clearTimeout(timer);
+
+    var result = {};
+    try { result = await response.json(); } catch (e) { result = {}; }
+
+    // Token expire ya galat hai
+    if (response.status === 401 && authRequired) {
+        window.forceLogout();
+        throw new Error(result.error || 'Session khatam ho gaya. Dobara login karo.');
+    }
+
+    if (response.status === 429) {
+        throw new Error(result.error || 'Bahut zyada requests. Thodi der baad try karo.');
+    }
 
     if (!response.ok) {
-        throw new Error(result.error || 'Request failed');
+        throw new Error(result.error || result.message || 'Request failed');
     }
 
     return result;
@@ -66,6 +113,7 @@ window.AuthAPI = {
         var result = await window.apiCall('/auth/verify-otp', 'POST', {
             otp: otp, identifier: identifier
         });
+        if (window.cmTrace) window.cmTrace('server reply fields: ' + Object.keys(result).join(',') + ' | token in reply: ' + (result.token ? 'yes' : 'NO'));
         if (result.token) {
             window.saveToken(result.token);
             window.saveUser(result.user);
@@ -77,6 +125,7 @@ window.AuthAPI = {
         var result = await window.apiCall('/auth/login', 'POST', {
             identifier: identifier, password: password
         });
+        if (window.cmTrace) window.cmTrace('server reply fields: ' + Object.keys(result).join(',') + ' | token in reply: ' + (result.token ? 'yes' : 'NO'));
         if (result.token) {
             window.saveToken(result.token);
             window.saveUser(result.user);
@@ -105,7 +154,7 @@ window.AuthAPI = {
 
     logout: function() {
         window.clearToken();
-        window.location.href = 'login.html';
+        window.location.replace('login.html');
     }
 };
 
