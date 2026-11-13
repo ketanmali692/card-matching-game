@@ -4,7 +4,7 @@
 //  data-mode="redirect-if-logged-in" -> login hai to seedha splash -> home
 //  (user tab tak logged in rehta hai jab tak wo khud logout na kare)
 // ============================================================
-window.CM_VERSION = '2026-10-21-a';
+window.CM_VERSION = '2026-10-21-b'; // Version update kiya
 
 // Chhota sa "kaun kahan bheja gaya" log (sirf debug.html me dikhta hai, koi secret nahi)
 window.cmTrace = function(msg) {
@@ -57,6 +57,12 @@ window.cmTrace = function(msg) {
 
     window.cmTrace(page + ' [' + mode + '] token=' + (token ? 'yes' : 'no') + (expired ? ' (expired, removed)' : '') + ' -> ' + decision);
 
-    if (decision === 'GO login.html') window.location.replace('login.html');
-    else if (decision === 'GO splash.html') window.location.replace('splash.html');
+    // ✅ FIX: 50ms delay taaki localStorage save hone ke baad hi redirect ho
+    setTimeout(function() {
+        if (decision === 'GO login.html') {
+            window.location.replace('login.html');
+        } else if (decision === 'GO splash.html') {
+            window.location.replace('splash.html');
+        }
+    }, 50);
 })();

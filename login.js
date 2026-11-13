@@ -95,10 +95,10 @@ async function handleLogin() {
         if (window.cmTrace) window.cmTrace('login ok, token saved=' + (window.getToken() ? 'yes' : 'NO') + ' -> splash.html');
         showSuccess('Login successful! Redirecting...');
 
+        // ✅ FIX: Time 800ms se badha kar 1500ms kar diya taaki token save ho jaye
         setTimeout(function() {
-            // ✅ 5 second Splash pe bhejo
             window.location.replace('splash.html');
-        }, 800);
+        }, 1500);
 
     } catch (err) {
         showError(err.message);
@@ -189,8 +189,6 @@ function setupForgotPassword() {
     });
 }
 
-// ✅ Ab pehle server ka jawab aata hai, tabhi OTP wala step khulta hai.
-//    Isse "din me 3 baar" jaisi limit ka error user ko dikh jata hai.
 async function handleSendForgotOtp() {
     var errEl = document.getElementById('forgotError1');
     errEl.classList.add('hidden');
@@ -331,7 +329,6 @@ async function handleResetPassword() {
         document.getElementById('forgotStep4').style.display = 'block';
 
     } catch (err) {
-        // OTP galat/expire hua to user ko OTP wale step par wapas bhejo
         if (/otp/i.test(err.message)) {
             var otpErr = document.getElementById('forgotError2');
             otpErr.textContent = '❌ ' + err.message;

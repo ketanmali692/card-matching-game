@@ -85,7 +85,7 @@ window.apiCall = async function(endpoint, method, data, authRequired) {
     var result = {};
     try { result = await response.json(); } catch (e) { result = {}; }
 
-    // Token expire ya galat hai
+    // ✅ FIX: Sirf tab logout karein jab backend 401 bole (Token truly invalid)
     if (response.status === 401 && authRequired) {
         window.forceLogout();
         throw new Error(result.error || 'Session khatam ho gaya. Dobara login karo.');
@@ -93,6 +93,11 @@ window.apiCall = async function(endpoint, method, data, authRequired) {
 
     if (response.status === 429) {
         throw new Error(result.error || 'Bahut zyada requests. Thodi der baad try karo.');
+    }
+
+    // ✅ FIX: Agar backend down hai (500/502/503), toh user ko login page par na bhejein
+    if (response.status >= 500 && authRequired) {
+        throw new Error('Server is busy or sleeping. Please wait a moment and try again.');
     }
 
     if (!response.ok) {
